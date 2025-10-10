@@ -6,21 +6,21 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Auth (8081)
       "/api/auth": {
         target: "http://localhost:8081",
         changeOrigin: true,
         secure: false,
       },
-      // Catálogos (8082)
+      "/api/inversionistas": {
+        target: "http://localhost:8083",
+        changeOrigin: true,
+        secure: false,
+      },
       "/api": {
         target: "http://localhost:8082",
         changeOrigin: true,
         secure: false,
-        bypass(req) {
-          if (req.url.startsWith("/api/auth")) return "/api/auth";
-        },
-      },
+      }, 
     },
   },
 });

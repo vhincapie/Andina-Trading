@@ -30,4 +30,7 @@ public interface IAuthController {
     ResponseEntity<Void> logout(
             @CookieValue(name = "refreshToken", required = false) String tokenCookie,
             @RequestBody(required = false) LogoutRequestDTO body);
+
+    @PostMapping("/registrar-inversionista")
+    ResponseEntity<SignupResponseDTO> registrarInversionista(@RequestBody RegistrarInversionistaRequestDTO req);
 }

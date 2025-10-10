@@ -18,7 +18,9 @@ public class BaseResponse {
         this.timestamp = Instant.now();
     }
 
+
     //Getters/Setters
+
     public String getMessage() {
         return message;
     }

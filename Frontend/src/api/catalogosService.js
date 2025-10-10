@@ -1,4 +1,4 @@
-import catalogosApi from "./axiosCatalogos";
+import catalogosApi from "./axiosCatalogos.js";
 
 export const listarPaises = async () => {
   const { data } = await catalogosApi.get("/catalogos/paises/listar");
