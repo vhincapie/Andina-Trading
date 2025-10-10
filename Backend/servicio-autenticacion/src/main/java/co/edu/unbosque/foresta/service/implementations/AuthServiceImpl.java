@@ -1,21 +1,17 @@
 package co.edu.unbosque.foresta.service.implementations;
 
 import co.edu.unbosque.foresta.exceptions.AuthException;
-import co.edu.unbosque.foresta.model.DTO.LoginRequestDTO;
-import co.edu.unbosque.foresta.model.DTO.RecoverPasswordRequestDTO;
-import co.edu.unbosque.foresta.model.DTO.RefreshTokenRequestDTO;
-import co.edu.unbosque.foresta.model.DTO.ResetPasswordRequestDTO;
-import co.edu.unbosque.foresta.model.DTO.UsuarioDTO;
-import co.edu.unbosque.foresta.model.entity.LoginResponse;
-import co.edu.unbosque.foresta.model.entity.PasswordResetToken;
-import co.edu.unbosque.foresta.model.entity.RefreshToken;
-import co.edu.unbosque.foresta.model.entity.Usuario;
+import co.edu.unbosque.foresta.model.DTO.*;
+import co.edu.unbosque.foresta.model.entity.*;
+import co.edu.unbosque.foresta.model.enums.RolEnum;
+import co.edu.unbosque.foresta.repository.IRolRepository;
 import co.edu.unbosque.foresta.repository.IUsuarioRepository;
 import co.edu.unbosque.foresta.repository.IRefreshTokenRepository;
 import co.edu.unbosque.foresta.repository.IPasswordResetTokenRepository;
 import co.edu.unbosque.foresta.security.JwtService;
 import co.edu.unbosque.foresta.service.interfaces.IAuthService;
 import co.edu.unbosque.foresta.service.interfaces.IEmailService;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +27,7 @@ public class AuthServiceImpl implements IAuthService {
     private static final long VIDA_ACCESS_SEGUNDOS = 900;            // 15 min
 
     private final IUsuarioRepository usuarioRepo;
+    private final IRolRepository  rolRepo;
     private final IRefreshTokenRepository refreshRepo;
     private final IPasswordResetTokenRepository resetRepo;
     private final BCryptPasswordEncoder encriptador;
@@ -38,7 +35,7 @@ public class AuthServiceImpl implements IAuthService {
     private final IEmailService emailService;
     private final ModelMapper modelMapper;
 
-    public AuthServiceImpl(IUsuarioRepository usuarioRepo,
+    public AuthServiceImpl(IUsuarioRepository usuarioRepo, IRolRepository rolRepo,
                            IRefreshTokenRepository refreshRepo,
                            IPasswordResetTokenRepository resetRepo,
                            BCryptPasswordEncoder encriptador,
@@ -46,6 +43,7 @@ public class AuthServiceImpl implements IAuthService {
                            ModelMapper modelMapper,
                            IEmailService emailService) {
         this.usuarioRepo = usuarioRepo;
+        this.rolRepo = rolRepo;
         this.refreshRepo = refreshRepo;
         this.resetRepo = resetRepo;
         this.encriptador = encriptador;
@@ -111,6 +109,22 @@ public class AuthServiceImpl implements IAuthService {
     public UsuarioDTO me(String correo) {
         Usuario usuario = obtenerUsuarioPorCorreo(correo);
         return convertirADTO(usuario);
+    }
+
+    @Override
+    @Transactional
+    public SignupResponseDTO registrarInversionista(RegistrarInversionistaRequestDTO req) {
+        validarSolicitud(req);
+
+        String correo = normalizarCorreo(req.getCorreo());
+        asegurarCorreoDisponible(correo);
+
+        Rol rolInv = obtenerRolInversionista();
+
+        Usuario u = construirUsuario(correo, req.getContrasena(), rolInv);
+        Usuario guardado = usuarioRepo.save(u);
+
+        return construirSignupResponse(guardado);
     }
 
     private Usuario obtenerUsuarioPorCorreo(String correo) {
@@ -193,5 +207,42 @@ public class AuthServiceImpl implements IAuthService {
         res.setRol(dto.getRol());
         res.setUsuario(dto);
         return res;
+    }
+
+    private void validarSolicitud(RegistrarInversionistaRequestDTO req) {
+        if (req == null
+                || req.getCorreo() == null || req.getCorreo().isBlank()
+                || req.getContrasena() == null || req.getContrasena().isBlank()) {
+            throw new AuthException("DATOS_OBLIGATORIOS");
+        }
+    }
+
+    private String normalizarCorreo(String c) {
+        return c.trim().toLowerCase();
+    }
+
+    private void asegurarCorreoDisponible(String correo) {
+        usuarioRepo.findByCorreo(correo).ifPresent(u -> {
+            throw new AuthException("USUARIO_YA_EXISTE");
+        });
+    }
+
+    private Rol obtenerRolInversionista() {
+        return rolRepo.findByNombre(RolEnum.INVERSIONISTA)
+                .orElseThrow(() -> new AuthException("ROL_INEXISTENTE"));
+    }
+
+    private Usuario construirUsuario(String correo, String contrasenaPlano, Rol rol) {
+        Usuario u = new Usuario();
+        u.setCorreo(correo);
+        u.setContrasenaHash(encriptador.encode(contrasenaPlano));
+        u.setIntentosFallidos(0);
+        u.setUltimoLogin(null);
+        u.setRol(rol);
+        return u;
+    }
+
+    private SignupResponseDTO construirSignupResponse(Usuario guardado) {
+        return new SignupResponseDTO(guardado.getId(), RolEnum.INVERSIONISTA);
     }
 }

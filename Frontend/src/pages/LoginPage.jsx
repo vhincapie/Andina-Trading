@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { login } from "../api/authService";
 import ErrorAlert from "../components/alerts/ErrorAlert";
 import SuccessAlert from "../components/alerts/SuccessAlert";
+import { Link } from "react-router-dom";
 
 export default function LoginPage() {
   const [correo, setCorreo] = useState("");
@@ -26,7 +27,7 @@ export default function LoginPage() {
       const data = await login(correo.trim().toLowerCase(), contrasena);
       localStorage.setItem("accessToken", data.accessToken);
       setOk("Inicio de sesión exitoso.");
-      setTimeout(() => (window.location.href = "/"), 1500);
+      setTimeout(() => (window.location.href = "/"), 800);
     } catch (err) {
       console.error("LOGIN ERROR =>", {
         message: err?.message,
@@ -44,9 +45,12 @@ export default function LoginPage() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="max-w-sm mx-auto mt-20 space-y-3">
+    <form onSubmit={onSubmit} className="max-w-sm mx-auto mt-20 space-y-4">
+      <h1 className="text-2xl font-semibold text-center">Iniciar sesión</h1>
+
       <ErrorAlert message={error} onClose={() => setError("")} />
       <SuccessAlert message={ok} onClose={() => setOk("")} />
+
       <input
         type="email"
         placeholder="Correo"
@@ -63,17 +67,28 @@ export default function LoginPage() {
         onChange={(e) => setContrasena(e.target.value)}
         required
       />
+
       <button
         type="submit"
         className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
       >
         Iniciar sesión
       </button>
-      <p className="text-center mt-3">
-        <a className="text-blue-600 hover:underline" href="/recuperar-password">
+
+      <div className="text-center space-y-2">
+        <a
+          className="text-blue-600 hover:underline block"
+          href="/recuperar-password"
+        >
           ¿Olvidaste tu contraseña?
         </a>
-      </p>
+        <Link
+          to="/registro-inversionista"
+          className="inline-block px-3 py-2 rounded border hover:bg-gray-50"
+        >
+          Registrarme
+        </Link>
+      </div>
     </form>
   );
 }

@@ -112,4 +112,10 @@ public class AuthControllerImpl implements IAuthController {
                 .header(HttpHeaders.SET_COOKIE, delete.toString())
                 .build();
     }
+
+    @Override
+    public ResponseEntity<SignupResponseDTO> registrarInversionista(RegistrarInversionistaRequestDTO req) {
+        var res = service.registrarInversionista(req);
+        return ResponseEntity.ok(res);
+    }
 }

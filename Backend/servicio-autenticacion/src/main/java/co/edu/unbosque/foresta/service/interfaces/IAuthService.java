@@ -10,4 +10,5 @@ public interface IAuthService {
     void restablecer(ResetPasswordRequestDTO request);
     UsuarioDTO me(String correoAutenticado);
     void logout(String refreshToken);
+    SignupResponseDTO registrarInversionista(RegistrarInversionistaRequestDTO req);
 }

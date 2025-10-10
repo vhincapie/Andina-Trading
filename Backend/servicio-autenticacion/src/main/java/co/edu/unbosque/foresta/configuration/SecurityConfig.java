@@ -48,7 +48,8 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/logout",
                                 "/api/auth/recuperar-password",
-                                "/api/auth/restablecer-password").permitAll()
+                                "/api/auth/restablecer-password",
+                                "/api/auth/registrar-inversionista").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/auth/me").authenticated()
                         .anyRequest().authenticated()
                 )
