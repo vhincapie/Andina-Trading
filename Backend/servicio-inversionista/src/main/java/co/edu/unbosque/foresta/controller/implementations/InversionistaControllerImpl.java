@@ -5,6 +5,7 @@ import co.edu.unbosque.foresta.model.DTO.InversionistaDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaRegistroRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaUpdateRequestDTO;
 import co.edu.unbosque.foresta.service.interfaces.IInversionistaService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +28,7 @@ public class InversionistaControllerImpl implements IInversionistaController {
     }
 
     @Override
+    @PreAuthorize("hasRole('INVERSIONISTA')")
     public InversionistaDTO miPerfil(@AuthenticationPrincipal String username) {
         if (username == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
@@ -35,6 +37,7 @@ public class InversionistaControllerImpl implements IInversionistaController {
     }
 
     @Override
+    @PreAuthorize("hasRole('INVERSIONISTA')")
     public InversionistaDTO actualizar(@AuthenticationPrincipal String username,
                                        @RequestBody @Valid InversionistaUpdateRequestDTO req) {
         if (username == null) {

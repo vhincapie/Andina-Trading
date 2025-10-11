@@ -1,41 +1,84 @@
 package co.edu.unbosque.foresta.security;
 
-import co.edu.unbosque.foresta.service.implementations.CustomUserDetailsServiceImpl;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwt;
-    private final CustomUserDetailsServiceImpl uds;
 
-    public JwtAuthenticationFilter(JwtService jwt, CustomUserDetailsServiceImpl uds){
-        this.jwt = jwt; this.uds = uds;
+    public JwtAuthenticationFilter(JwtService jwt) {
+        this.jwt = jwt;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
-            throws java.io.IOException, jakarta.servlet.ServletException {
-        String auth = req.getHeader("Authorization");
-        if (auth != null && auth.startsWith("Bearer ")) {
-            String token = auth.substring(7);
-            try {
-                Claims claims = jwt.parse(token).getPayload();
-                String correo = claims.getSubject();
-                var userDetails = uds.loadUserByUsername(correo);
-                var authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            } catch (Exception ignored) {  }
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
-        chain.doFilter(req, res);
+
+        String token = header.substring(7);
+        try {
+            Jws<Claims> jws = jwt.parse(token);
+            Claims claims = jws.getPayload();
+
+            String username = claims.getSubject();
+
+            Object rolesObj = claims.get("roles");
+            if (rolesObj == null) rolesObj = claims.get("authorities");
+            if (rolesObj == null) rolesObj = claims.get("role");
+            if (rolesObj == null) rolesObj = claims.get("rol");
+            if (rolesObj == null) rolesObj = claims.get("scope");
+
+            List<String> roles;
+            if (rolesObj instanceof List<?> rawList) {
+                roles = rawList.stream()
+                        .filter(Objects::nonNull)
+                        .map(String::valueOf)
+                        .toList();
+            } else if (rolesObj instanceof String s) {
+                roles = Arrays.stream(s.split("[,\\s]+"))
+                        .filter(t -> !t.isBlank())
+                        .toList();
+            } else {
+                roles = List.of();
+            }
+
+            Collection<? extends GrantedAuthority> authorities = roles.stream()
+                    .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r.toUpperCase())
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(username, null, authorities);
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
+        }
+
+        filterChain.doFilter(request, response);
     }
 }

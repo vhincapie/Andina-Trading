@@ -3,8 +3,9 @@ package co.edu.unbosque.foresta.controller.interfaces;
 import co.edu.unbosque.foresta.model.DTO.*;
 import co.edu.unbosque.foresta.model.entity.LoginResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 
 @RequestMapping("/api/auth")
 public interface IAuthController {
@@ -24,7 +25,7 @@ public interface IAuthController {
     ResponseEntity<Void> restablecer(@RequestBody ResetPasswordRequestDTO req);
 
     @GetMapping("/me")
-    ResponseEntity<UsuarioDTO> me(@AuthenticationPrincipal org.springframework.security.core.userdetails.User user);
+    ResponseEntity<UsuarioDTO> me(Principal principal);
 
     @PostMapping("/logout")
     ResponseEntity<Void> logout(
@@ -33,4 +34,7 @@ public interface IAuthController {
 
     @PostMapping("/registrar-inversionista")
     ResponseEntity<SignupResponseDTO> registrarInversionista(@RequestBody RegistrarInversionistaRequestDTO req);
+
+    @PostMapping("/registrar-comisionista")
+    ResponseEntity<SignupResponseDTO> registrarComisionista(@RequestBody RegistrarComisionistaRequestDTO req);
 }
