@@ -67,24 +67,24 @@ public class PaisServiceImpl implements IPaisService {
 
     private void normalizar(PaisDTO dto) {
         if (dto == null) return;
-        if (dto.getCodigoIso2() != null) dto.setCodigoIso2(dto.getCodigoIso2().trim().toUpperCase());
+        if (dto.getCodigoIso3() != null) dto.setCodigoIso3(dto.getCodigoIso3().trim().toUpperCase());
         if (dto.getNombre() != null) dto.setNombre(dto.getNombre().trim());
         if (dto.getEstado() == null) dto.setEstado(EstadoEnum.ACTIVO);
     }
 
     private void validarCampos(PaisDTO dto) {
         if (dto == null) throw new BadRequestException("Body requerido");
-        if (dto.getCodigoIso2() == null || dto.getCodigoIso2().isBlank())
-            throw new BadRequestException("codigoIso2 es obligatorio");
-        if (dto.getCodigoIso2().length() != 2)
-            throw new BadRequestException("codigoIso2 debe tener 2 letras (ISO2)");
+        if (dto.getCodigoIso3() == null || dto.getCodigoIso3().isBlank())
+            throw new BadRequestException("codigoIso3 es obligatorio");
+        if (dto.getCodigoIso3().length() != 3)
+            throw new BadRequestException("codigoIso3 debe tener 3 letras (ISO3)");
         if (dto.getNombre() == null || dto.getNombre().isBlank())
             throw new BadRequestException("nombre es obligatorio");
     }
 
     private void validarDuplicados(PaisDTO dto) {
-        if (paisRepo.existsByCodigoIso2IgnoreCase(dto.getCodigoIso2()))
-            throw new ConflictException("Ya existe un país con ese codigoIso2");
+        if (paisRepo.existsByCodigoIso3IgnoreCase(dto.getCodigoIso3()))
+            throw new ConflictException("Ya existe un país con ese codigoIso3");
         if (paisRepo.existsByNombreIgnoreCase(dto.getNombre()))
             throw new ConflictException("Ya existe un país con ese nombre");
     }
@@ -97,7 +97,7 @@ public class PaisServiceImpl implements IPaisService {
 
     private Pais construirEntidad(PaisDTO dto, SituacionEconomica se) {
         Pais p = new Pais();
-        p.setCodigoIso2(dto.getCodigoIso2());
+        p.setCodigoIso3(dto.getCodigoIso3());
         p.setNombre(dto.getNombre());
         p.setEstado(dto.getEstado());
         p.setSituacionEconomica(se);

@@ -8,7 +8,7 @@ import { getApiErrorMessage } from "../../utils/errorMessage";
 
 export default function PaisesPage() {
   const [nombre, setNombre] = useState("");
-  const [codigoIso2, setCodigoIso2] = useState("");
+  const [codigoIso3, setCodigoIso3] = useState("");
   const [situacionId, setSituacionId] = useState("");
 
   const [loadingList, setLoadingList] = useState(false);
@@ -35,11 +35,13 @@ export default function PaisesPage() {
 
   const validate = () => {
     const n = (nombre || "").trim();
-    const c = (codigoIso2 || "").trim().toUpperCase();
+    const c = (codigoIso3 || "").trim().toUpperCase();
     if (!n) return "El nombre es obligatorio.";
-    if (!c) return "El código ISO2 es obligatorio.";
-    if (c.length !== 2)
-      return "El código ISO2 debe tener exactamente 2 letras.";
+    if (!c) return "El código ISO3 es obligatorio.";
+    if (c.length !== 3)
+      return "El código ISO3 debe tener exactamente 3 letras.";
+    if (!/^[A-Z]{3}$/.test(c))
+      return "El código ISO3 solo debe contener letras A-Z.";
     if (!situacionId) return "La situación económica es obligatoria.";
     return null;
   };
@@ -85,7 +87,7 @@ export default function PaisesPage() {
 
     const payload = {
       nombre: nombre.trim(),
-      codigoIso2: codigoIso2.trim().toUpperCase(),
+      codigoIso3: codigoIso3.trim().toUpperCase(),
       situacionEconomicaDTO: { id: Number(situacionId) },
     };
 
@@ -94,7 +96,7 @@ export default function PaisesPage() {
       await crearPais(payload);
       setOkMsg("País creado correctamente.");
       setNombre("");
-      setCodigoIso2("");
+      setCodigoIso3("");
       setSituacionId("");
       await loadData();
     } catch (e) {
@@ -103,7 +105,7 @@ export default function PaisesPage() {
       const parsed = getApiErrorMessage(e);
       const msg =
         parsed ||
-        (status === 409 && "Ya existe un país con ese código ISO2 o nombre.") ||
+        (status === 409 && "Ya existe un país con ese código ISO3 o nombre.") ||
         (status === 400 && "Datos inválidos.") ||
         (status === 401 && "Sesión inválida o expirada.") ||
         "No se pudo crear el país.";
@@ -178,14 +180,14 @@ export default function PaisesPage() {
 
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: "block", marginBottom: 6 }}>
-              Código ISO2
+              Código ISO3
             </label>
             <input
               type="text"
-              value={codigoIso2}
-              onChange={(e) => setCodigoIso2(e.target.value.toUpperCase())}
-              placeholder="EC"
-              maxLength={2}
+              value={codigoIso3}
+              onChange={(e) => setCodigoIso3(e.target.value.toUpperCase())}
+              placeholder="ECU"
+              maxLength={3}
               className="input"
               style={{
                 width: "100%",
@@ -266,7 +268,7 @@ export default function PaisesPage() {
           <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
             {paises.map((p) => (
               <li
-                key={p.id ?? `${p.nombre}-${p.codigoIso2}`}
+                key={p.id ?? `${p.nombre}-${p.codigoIso3}`}
                 style={{
                   border: "1px solid #eee",
                   padding: "10px 12px",
@@ -274,7 +276,7 @@ export default function PaisesPage() {
                   marginBottom: 8,
                 }}
               >
-                <strong>{p.nombre}</strong> · {p.codigoIso2?.toUpperCase()}
+                <strong>{p.nombre}</strong> · {p.codigoIso3?.toUpperCase()}
                 {p.situacionEconomicaDTO?.nombre && (
                   <div style={{ color: "#555", marginTop: 4 }}>
                     <small>

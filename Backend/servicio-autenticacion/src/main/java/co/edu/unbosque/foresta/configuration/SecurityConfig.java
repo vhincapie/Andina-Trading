@@ -39,10 +39,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filter(HttpSecurity http) throws Exception {
-        http.csrf(csrf->csrf.disable())
+        http.csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
-                .sessionManagement(sm->sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth->auth
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/login",
                                 "/api/auth/refresh",
@@ -50,7 +50,10 @@ public class SecurityConfig {
                                 "/api/auth/recuperar-password",
                                 "/api/auth/restablecer-password",
                                 "/api/auth/registrar-inversionista").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/auth/me").authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/api/auth/registrar-comisionista").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);

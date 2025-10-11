@@ -8,8 +8,8 @@ public class Pais {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="codigo_iso2", length=2, nullable=false, unique=true)
-    private String codigoIso2;
+    @Column(name="codigo_iso3", length=2, nullable=false, unique=true)
+    private String codigoIso3;
 
     @Column(name="nombre", length=120, nullable=false, unique=true)
     private String nombre;
@@ -28,7 +28,7 @@ public class Pais {
 
     public Pais(Long id, String codigoIso2, String nombre, EstadoEnum estado, SituacionEconomica situacionEconomica) {
         this.id = id;
-        this.codigoIso2 = codigoIso2;
+        this.codigoIso3 = codigoIso2;
         this.nombre = nombre;
         this.estado = estado;
         this.situacionEconomica = situacionEconomica;
@@ -43,12 +43,12 @@ public class Pais {
         this.id = id;
     }
 
-    public String getCodigoIso2() {
-        return codigoIso2;
+    public String getCodigoIso3() {
+        return codigoIso3;
     }
 
-    public void setCodigoIso2(String codigoIso2) {
-        this.codigoIso2 = codigoIso2;
+    public void setCodigoIso3(String codigoIso2) {
+        this.codigoIso3 = codigoIso2;
     }
 
     public String getNombre() {

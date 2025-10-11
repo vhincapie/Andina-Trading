@@ -7,11 +7,12 @@ import co.edu.unbosque.foresta.service.interfaces.IAuthService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.time.Duration;
 
 @RestController
@@ -35,7 +36,6 @@ public class AuthControllerImpl implements IAuthController {
                 .path("/")
                 .maxAge(Duration.ofDays(7))
                 .build();
-
 
         res.setRefreshToken(null);
 
@@ -82,10 +82,11 @@ public class AuthControllerImpl implements IAuthController {
     }
 
     @Override
-    public ResponseEntity<UsuarioDTO> me(
-            @AuthenticationPrincipal org.springframework.security.core.userdetails.User user
-    ) {
-        return ResponseEntity.ok(service.me(user.getUsername()));
+    public ResponseEntity<UsuarioDTO> me(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(service.me(principal.getName()));
     }
 
     @Override
@@ -116,6 +117,13 @@ public class AuthControllerImpl implements IAuthController {
     @Override
     public ResponseEntity<SignupResponseDTO> registrarInversionista(RegistrarInversionistaRequestDTO req) {
         var res = service.registrarInversionista(req);
+        return ResponseEntity.ok(res);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SignupResponseDTO> registrarComisionista(RegistrarComisionistaRequestDTO req) {
+        var res = service.registrarComisionista(req);
         return ResponseEntity.ok(res);
     }
 }
