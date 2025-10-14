@@ -1,9 +1,6 @@
 package co.edu.unbosque.foresta.exceptions.handler;
 
-
-import co.edu.unbosque.foresta.exceptions.exceptions.BadRequestException;
-import co.edu.unbosque.foresta.exceptions.exceptions.ConflictException;
-import co.edu.unbosque.foresta.exceptions.exceptions.NotFoundException;
+import co.edu.unbosque.foresta.exceptions.exceptions.*;
 import co.edu.unbosque.foresta.model.BaseResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,8 +31,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
-    public ResponseEntity<BaseResponse> rse(org.springframework.web.server.ResponseStatusException ex,
-                                            HttpServletRequest r) {
+    public ResponseEntity<BaseResponse> rse(org.springframework.web.server.ResponseStatusException ex, HttpServletRequest r) {
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
         String msg = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
         return body(status, msg, r);
@@ -61,7 +57,7 @@ public class GlobalExceptionHandler {
         int s = ex.status();
         if (s == 409) return body(HttpStatus.CONFLICT, "Conflicto con servicio externo", r);
         if (s == 400) return body(HttpStatus.BAD_REQUEST, "Solicitud inválida en servicio externo", r);
+        if (s == 404) return body(HttpStatus.NOT_FOUND, "Recurso no encontrado en servicio externo", r);
         return body(HttpStatus.BAD_REQUEST, "Error al llamar servicio externo ("+s+")", r);
     }
-
 }

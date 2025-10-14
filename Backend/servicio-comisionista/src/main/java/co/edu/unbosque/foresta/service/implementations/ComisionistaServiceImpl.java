@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ComisionistaServiceImpl implements IComisionistaService {
@@ -202,4 +204,21 @@ public class ComisionistaServiceImpl implements IComisionistaService {
     private static boolean vacio(String s) { return s == null || s.isBlank(); }
     private static String trim(String s) { return s == null ? null : s.trim(); }
     private static String trimLower(String s) { return s == null ? null : s.trim().toLowerCase(); }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ComisionistaDTO> listarTodos() {
+        return repo.findAll()
+                .stream()
+                .map(e -> mm.map(e, ComisionistaDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public ComisionistaDTO obtenerPorId(Long id) {
+        Comisionista c = repo.findById(id)
+                .orElseThrow(() -> new NotFoundException("Comisionista not found"));
+        return mm.map(c, ComisionistaDTO.class);
+    }
 }

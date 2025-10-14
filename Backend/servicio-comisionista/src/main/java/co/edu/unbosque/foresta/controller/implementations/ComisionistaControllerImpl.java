@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 public class ComisionistaControllerImpl implements IComisionistaController {
@@ -38,4 +39,15 @@ public class ComisionistaControllerImpl implements IComisionistaController {
        return service.perfil(principal.getName());
     }
 
+    @Override
+    @PreAuthorize("hasAnyRole('INVERSIONISTA','ADMIN')")
+    public List<ComisionistaDTO> listarTodos() {
+        return service.listarTodos();
+    }
+
+    @Override
+    @PreAuthorize("hasAnyRole('INVERSIONISTA','COMISIONISTA','ADMIN')")
+    public ComisionistaDTO obtenerPorId(Long id) {
+        return service.obtenerPorId(id);
+    }
 }

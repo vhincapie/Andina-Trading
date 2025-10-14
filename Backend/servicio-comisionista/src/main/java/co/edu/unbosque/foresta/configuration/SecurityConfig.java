@@ -55,6 +55,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/comisionistas/registrar").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/comisionistas/perfil").hasRole("COMISIONISTA")
+                        .requestMatchers(HttpMethod.GET, "/api/comisionistas/listar").hasAnyRole("INVERSIONISTA","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/comisionistas/{id}").hasAnyRole("INVERSIONISTA","COMISIONISTA","ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

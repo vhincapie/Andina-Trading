@@ -8,5 +8,6 @@ public interface IInversionistaService {
     InversionistaDTO registrar(InversionistaRegistroRequestDTO req);
     InversionistaDTO actualizar(String correoAutenticado, InversionistaUpdateRequestDTO req);
     InversionistaDTO obtenerMiPerfil(String correoAutenticado);
+    InversionistaDTO obtenerPorId(Long id);
 
 }

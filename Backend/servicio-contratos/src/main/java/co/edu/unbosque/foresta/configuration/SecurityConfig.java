@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.*;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
@@ -30,13 +31,14 @@ public class SecurityConfig {
     SecurityFilterChain filter(HttpSecurity http) throws Exception {
         http.csrf(csrf->csrf.disable())
                 .cors(Customizer.withDefaults())
-                .sessionManagement(sm->sm.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+                .sessionManagement(sm->sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex->ex.authenticationEntryPoint(restEntry()).accessDeniedHandler(restDenied()))
                 .authorizeHttpRequests(auth->auth
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/inversionistas/registrar").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/inversionistas/perfil").authenticated()
-                        .requestMatchers(HttpMethod.PUT,"/api/inversionistas/actualizar").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/contratos/mi-contrato").hasRole("INVERSIONISTA")
+                        .requestMatchers(HttpMethod.POST, "/api/contratos/registrar").hasRole("INVERSIONISTA")
+                        .requestMatchers(HttpMethod.PUT, "/api/contratos/cancelar").hasRole("INVERSIONISTA")
+                        .requestMatchers(HttpMethod.GET, "/api/contratos/{inversionistaId}").hasRole("COMISIONISTA")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);

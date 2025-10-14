@@ -46,4 +46,10 @@ public class InversionistaControllerImpl implements IInversionistaController {
         return service.actualizar(username, req);
     }
 
+    @Override
+    @PreAuthorize("hasAnyRole('COMISIONISTA','INVERSIONISTA','ADMIN')")
+    public InversionistaDTO obtenerPorId(Long id) {
+        return service.obtenerPorId(id);
+    }
+
 }

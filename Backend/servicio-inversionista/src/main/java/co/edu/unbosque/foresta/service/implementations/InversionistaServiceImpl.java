@@ -66,6 +66,14 @@ public class InversionistaServiceImpl implements IInversionistaService {
         return toDTO(inv);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public InversionistaDTO obtenerPorId(Long id) {
+        Inversionista c = repo.findById(id)
+                .orElseThrow(() -> new NotFoundException("Inversionista not found"));
+        return mm.map(c, InversionistaDTO.class);
+    }
+
     private InversionistaRegistroRequestDTO validarYNormalizarRegistro(InversionistaRegistroRequestDTO req) {
         validarReqRegistro(req);
         return normalizarReqRegistro(req);
