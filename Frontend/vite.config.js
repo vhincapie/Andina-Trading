@@ -20,7 +20,17 @@ export default defineConfig({
         target: "http://localhost:8082",
         changeOrigin: true,
         secure: false,
-      }, 
+      },
+      "/api/comisionistas": {
+        target: "http://localhost:8084",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/api/contratos": {
+        target: "http://localhost:8085",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

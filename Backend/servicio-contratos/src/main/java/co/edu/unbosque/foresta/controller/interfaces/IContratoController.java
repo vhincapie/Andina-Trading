@@ -3,6 +3,7 @@ package co.edu.unbosque.foresta.controller.interfaces;
 import co.edu.unbosque.foresta.model.DTO.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RequestMapping("/api/contratos")
@@ -17,7 +18,7 @@ public interface IContratoController {
     @PutMapping("/cancelar")
     ContratoDTO cancelarMiContratoActivo();
 
-    @GetMapping("/{inversionistaId}")
-    ContratoDTO listarPorInversionistaParaComisionista(@PathVariable("inversionistaId") Long inversionistaId);
+    @GetMapping("/mis-contratos")
+    List<ContratoDTO> listarMisContratos();
 
 }
