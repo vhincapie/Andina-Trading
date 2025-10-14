@@ -19,4 +19,7 @@ public interface IInversionistaController {
     @PutMapping("/actualizar")
     InversionistaDTO actualizar(@AuthenticationPrincipal String username,
                                 @RequestBody @Valid InversionistaUpdateRequestDTO req);
+
+    @GetMapping("/{id}")
+    InversionistaDTO obtenerPorId(@PathVariable Long id);
 }

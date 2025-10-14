@@ -5,7 +5,11 @@ import co.edu.unbosque.foresta.model.DTO.ComisionistaRegistroRequestDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 public interface IComisionistaService {
     ComisionistaDTO registrar(ComisionistaRegistroRequestDTO req, String ip);
     ComisionistaDTO perfil(String correoAutenticado);
+    List<ComisionistaDTO> listarTodos();
+    ComisionistaDTO obtenerPorId(Long id);
 }

@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RequestMapping("/api/comisionistas")
 public interface IComisionistaController {
@@ -17,4 +18,10 @@ public interface IComisionistaController {
 
     @GetMapping("/perfil")
     ComisionistaDTO perfil(Principal principal);
+
+    @GetMapping("/listar")
+    List<ComisionistaDTO> listarTodos();
+
+    @GetMapping("/{id}")
+    ComisionistaDTO obtenerPorId(@PathVariable Long id);
 }
