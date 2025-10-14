@@ -50,7 +50,6 @@ public class Contrato {
     public Contrato(){}
 
     // Getters/Setters
-
     public Long getId() {
         return id;
     }

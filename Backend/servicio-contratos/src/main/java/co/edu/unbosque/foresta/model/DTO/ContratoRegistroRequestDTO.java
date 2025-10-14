@@ -1,15 +1,16 @@
 package co.edu.unbosque.foresta.model.DTO;
 
 public class ContratoRegistroRequestDTO {
-    private Long comisionistaId;     // requerido
-    private String moneda;           // COP | VES | USD | PEN (requerido)// opcional
-    private String observaciones;    // opcional
-    private Boolean aceptaTerminos;  // requerido (true)
+    private Long comisionistaId;
+    private String moneda;
+    private String observaciones;
+    private Boolean aceptaTerminos;
 
     public ContratoRegistroRequestDTO() {
 
     }
 
+    //Getters/Setters
     public ContratoRegistroRequestDTO(Long comisionistaId, String moneda, String observaciones, Boolean aceptaTerminos) {
         this.comisionistaId = comisionistaId;
         this.moneda = moneda;

@@ -15,6 +15,7 @@ public class ComisionistaPerfilDTO {
         this.correo = correo;
     }
 
+    //Getters/Setters
     public Long getId() {
         return id;
     }

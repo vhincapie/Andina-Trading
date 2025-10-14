@@ -14,5 +14,6 @@ public interface IContratoRepository extends JpaRepository<Contrato, Long> {
     Optional<Contrato> findFirstByInversionistaIdAndEstadoOrderByCreadoEnDesc(Long inversionistaId, EstadoContratoEnum estado);
     Optional<Contrato> findFirstByInversionistaIdAndComisionistaIdAndEstadoOrderByCreadoEnDesc(
             Long inversionistaId, Long comisionistaId, EstadoContratoEnum estado);
+    List<Contrato> findByComisionistaIdOrderByFechaInicioDesc(Long comisionistaId);
 
 }

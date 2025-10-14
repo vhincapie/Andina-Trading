@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -39,8 +40,8 @@ public class ContratoControllerImpl implements IContratoController {
 
     @Override
     @PreAuthorize("hasRole('COMISIONISTA')")
-    public ContratoDTO listarPorInversionistaParaComisionista(Long inversionistaId) {
-        return service.listarPorInversionistaParaComisionista(inversionistaId);
+    public List<ContratoDTO> listarMisContratos() {
+        return service.listarMisContratosComisionistaAutenticado();
     }
 
 }

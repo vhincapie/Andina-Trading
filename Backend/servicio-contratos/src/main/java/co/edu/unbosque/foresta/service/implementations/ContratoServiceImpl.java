@@ -11,6 +11,8 @@ import co.edu.unbosque.foresta.repository.IContratoRepository;
 import co.edu.unbosque.foresta.service.interfaces.IContratoService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,22 +44,63 @@ public class ContratoServiceImpl implements IContratoService {
     @Transactional
     @Override
     public ContratoDTO registrar(ContratoRegistroRequestDTO req) {
-        // 1) Validar request
         validarRequest(req);
+        InversionistaPerfilDTO inv = getInversionistaAutenticado();
+        ComisionistaPerfilDTO comPerfil = obtenerComisionista(req.getComisionistaId());
+        asegurarNoExisteContratoActivo(inv.getId());
+        Contrato entidad = construirContratoRegistro(req, inv, comPerfil);
+        Contrato guardado = repo.save(entidad);
+        return mapear(guardado);
+    }
 
-        // 2) Obtener inversionista autenticado
+    @Override
+    @Transactional(readOnly = true)
+    public ContratoDTO obtenerMiContratoActivo() {
+        InversionistaPerfilDTO inv = getInversionistaAutenticado();
+        Contrato contrato = obtenerContratoActivo(inv.getId());
+        return mapear(contrato);
+    }
+
+    @Override
+    @Transactional
+    public ContratoDTO cancelarMiContratoActivo() {
+        InversionistaPerfilDTO inv = getInversionistaAutenticado();
+        Contrato contrato = obtenerContratoActivo(inv.getId());
+        contrato.setEstado(EstadoContratoEnum.TERMINADO);
+        contrato.setFechaFin(LocalDateTime.now());
+        Contrato actualizado = repo.save(contrato);
+        return mapear(actualizado);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ContratoDTO> listarMisContratosComisionistaAutenticado() {
+        ComisionistaPerfilDTO comi = getComisionistaAutenticado();
+        List<Contrato> contratos = repo.findByComisionistaIdOrderByFechaInicioDesc(comi.getId());
+        return contratos.stream().map(c -> mapearParaListadoComisionista(c, comi)).toList();
+    }
+
+    private InversionistaPerfilDTO getInversionistaAutenticado() {
         InversionistaPerfilDTO inv = invClient.miPerfil();
         if (inv == null || inv.getId() == null) throw new NotFoundException("Perfil de inversionista no encontrado");
+        return inv;
+    }
 
-        // 3) Validar comisionista existe (perfil mínimo)
-        ComisionistaPerfilDTO comPerfil = obtenerComisionista(req.getComisionistaId());
+    private ComisionistaPerfilDTO getComisionistaAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) throw new NotFoundException("No autenticado");
+        ComisionistaPerfilDTO comi = comClient.miPerfil();
+        if (comi == null || comi.getId() == null) throw new NotFoundException("Perfil de comisionista no encontrado");
+        return comi;
+    }
 
-        // 4) Regla: un contrato ACTIVO por inversionista
-        if (repo.existsByInversionistaIdAndEstado(inv.getId(), EstadoContratoEnum.ACTIVO)) {
+    private void asegurarNoExisteContratoActivo(Long inversionistaId) {
+        if (repo.existsByInversionistaIdAndEstado(inversionistaId, EstadoContratoEnum.ACTIVO)) {
             throw new ConflictException("Ya existe un contrato ACTIVO para este inversionista");
         }
+    }
 
-        // 5) Construir entidad (fechas automáticas por DB; fecha_fin null)
+    private Contrato construirContratoRegistro(ContratoRegistroRequestDTO req, InversionistaPerfilDTO inv, ComisionistaPerfilDTO comPerfil) {
         Contrato c = new Contrato();
         c.setInversionistaId(inv.getId());
         c.setComisionistaId(comPerfil.getId());
@@ -71,91 +114,47 @@ public class ContratoServiceImpl implements IContratoService {
                         .replace("{{MONEDA}}", req.getMoneda().toUpperCase())
         );
         c.setObservaciones(trim(req.getObservaciones()));
-
-        // 6) Guardar
-        Contrato g = repo.save(c);
-
-        // 7) Mapear y ENRIQUECER
-        ContratoDTO dto = mm.map(g, ContratoDTO.class);
-        enriquecerNombresYDocs(dto);
-
-        return dto;
+        return c;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ContratoDTO obtenerMiContratoActivo() {
-        // 1) Identificar inversionista autenticado
-        InversionistaPerfilDTO inv = invClient.miPerfil();
-        if (inv == null || inv.getId() == null) {
-            throw new NotFoundException("Perfil de inversionista no encontrado");
-        }
-
-        // 2) Buscar contrato ACTIVO más reciente
-        Contrato contrato = repo.findFirstByInversionistaIdAndEstadoOrderByCreadoEnDesc(
-                inv.getId(), EstadoContratoEnum.ACTIVO
+    private Contrato obtenerContratoActivo(Long inversionistaId) {
+        return repo.findFirstByInversionistaIdAndEstadoOrderByCreadoEnDesc(
+                inversionistaId, EstadoContratoEnum.ACTIVO
         ).orElseThrow(() -> new NotFoundException("No tienes un contrato activo"));
+    }
 
-        // 3) Mapear y ENRIQUECER
-        ContratoDTO dto = mm.map(contrato, ContratoDTO.class);
+    private ContratoDTO mapear(Contrato entidad) {
+        ContratoDTO dto = mm.map(entidad, ContratoDTO.class);
         enriquecerNombresYDocs(dto);
-
         return dto;
     }
 
-    @Override
-    @Transactional
-    public ContratoDTO cancelarMiContratoActivo() {
-        // 1) Obtener inversionista autenticado
-        InversionistaPerfilDTO inv = invClient.miPerfil();
-        if (inv == null || inv.getId() == null)
-            throw new NotFoundException("Perfil de inversionista no encontrado");
-
-        // 2) Buscar su contrato activo
-        Contrato c = repo.findFirstByInversionistaIdAndEstadoOrderByCreadoEnDesc(
-                inv.getId(), EstadoContratoEnum.ACTIVO
-        ).orElseThrow(() -> new NotFoundException("No tienes un contrato activo"));
-
-        // 3) Cambiar estado y fecha fin
-        c.setEstado(EstadoContratoEnum.TERMINADO);
-        c.setFechaFin(LocalDateTime.now());
-
-        // 4) Guardar cambios
-        Contrato actualizado = repo.save(c);
-
-        // 5) Mapear y ENRIQUECER
-        ContratoDTO dto = mm.map(actualizado, ContratoDTO.class);
-        enriquecerNombresYDocs(dto);
-
+    private ContratoDTO mapearParaListadoComisionista(Contrato c, ComisionistaPerfilDTO comi) {
+        ContratoDTO dto = mm.map(c, ContratoDTO.class);
+        dto.setComisionistaId(comi.getId());
+        dto.setComisionistaNombreCompleto(nombreCompleto(comi.getNombre(), comi.getApellido()));
+        try {
+            InversionistaPerfilDTO inv = invClient.obtenerPorId(c.getInversionistaId());
+            if (inv != null) {
+                dto.setInversionistaId(inv.getId());
+                dto.setInversionistaNombreCompleto(nombreCompleto(inv.getNombre(), inv.getApellido()));
+                dto.setInversionistaDocumento(inv.getNumeroDocumento());
+            }
+        } catch (Exception ignored) {}
         return dto;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ContratoDTO listarPorInversionistaParaComisionista(Long inversionistaId) {
-        if (inversionistaId == null) throw new BadRequestException("inversionistaId es obligatorio");
-
-        ComisionistaPerfilDTO com = comClient.miPerfil();
-        if (com == null || com.getId() == null)
-            throw new NotFoundException("Perfil de comisionista no encontrado");
-
-        Contrato contrato = repo.findFirstByInversionistaIdAndComisionistaIdAndEstadoOrderByCreadoEnDesc(
-                inversionistaId, com.getId(), EstadoContratoEnum.ACTIVO
-        ).orElseThrow(() -> new NotFoundException("No existe un contrato ACTIVO para este inversionista con este comisionista"));
-
-        ContratoDTO dto = mm.map(contrato, ContratoDTO.class);
-        enriquecerNombresYDocs(dto);
-
-        return dto;
+    private String nombreCompleto(String n, String a) {
+        String nombre = n != null ? n.trim() : "";
+        String ape = a != null ? a.trim() : "";
+        return (nombre + " " + ape).trim();
     }
 
     private void validarRequest(ContratoRegistroRequestDTO r) {
         if (r == null) throw new BadRequestException("Body requerido");
         if (r.getComisionistaId() == null) throw new BadRequestException("comisionistaId es obligatorio");
         if (vacio(r.getMoneda())) throw new BadRequestException("moneda es obligatoria");
-        if (Boolean.TRUE.equals(r.getAceptaTerminos()) == false)
-            throw new BadRequestException("Debe aceptar los términos del contrato");
-        // No validamos fechas: fecha_inicio la pone la BD; fecha_fin solo al cancelar
+        if (!Boolean.TRUE.equals(r.getAceptaTerminos())) throw new BadRequestException("Debe aceptar los términos del contrato");
     }
 
     private String validarMoneda(String m) {
@@ -180,7 +179,6 @@ public class ContratoServiceImpl implements IContratoService {
     }
 
     private void enriquecerNombresYDocs(ContratoDTO dto) {
-        // Inversionista
         try {
             InversionistaPerfilDTO invDet = invClient.obtenerPorId(dto.getInversionistaId());
             if (invDet != null) {
@@ -199,7 +197,6 @@ public class ContratoServiceImpl implements IContratoService {
             dto.setInversionistaDocumento("-");
         }
 
-        // Comisionista
         try {
             ComisionistaPerfilDTO comDet = comClient.obtenerPorId(dto.getComisionistaId());
             if (comDet != null) {

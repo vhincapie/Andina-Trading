@@ -6,7 +6,19 @@ export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
 
   const role = String(user?.rol || "").toUpperCase();
-  const isInvestor = ["INVESTOR", "INVERSIONISTA"].includes(role);
+  const rolesArr = Array.isArray(user?.roles)
+    ? user.roles.map((r) => String(r).toUpperCase())
+    : [];
+
+  const isInvestor =
+    ["INVESTOR", "INVERSIONISTA"].includes(role) ||
+    rolesArr.some((r) => ["INVESTOR", "INVERSIONISTA"].includes(r));
+
+  const isComi = role === "COMISIONISTA" || rolesArr.includes("COMISIONISTA");
+
+  const isAdmin =
+    ["ADMIN", "ADMINISTRADOR"].includes(role) ||
+    rolesArr.some((r) => ["ADMIN", "ADMINISTRADOR"].includes(r));
 
   const onLogout = async () => {
     try {
@@ -68,17 +80,66 @@ export default function Navbar() {
               </NavLink>
 
               {isAuthenticated && isInvestor && (
+                <>
+                  <NavLink
+                    to="/perfil"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Mi perfil
+                  </NavLink>
+                  <NavLink
+                    to="/contratos"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Contrato
+                  </NavLink>
+                </>
+              )}
+
+              {isAuthenticated && isComi && (
+                <>
+                  <NavLink
+                    to="/comisionista/perfil"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Mi perfil
+                  </NavLink>
+                  <NavLink
+                    to="/comisionista/contratos"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Contratos
+                  </NavLink>
+                </>
+              )}
+
+              {isAuthenticated && isAdmin && (
                 <NavLink
-                  to="/perfil"
+                  to="/admin/comisionistas"
                   className={({ isActive }) =>
                     `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
                   }
                 >
-                  Mi perfil
+                  Comisionistas
                 </NavLink>
               )}
-
-              {isAuthenticated && !isInvestor && <CatalogLinks />}
+              {isAuthenticated && isAdmin && <CatalogLinks />}
             </div>
           </div>
 
@@ -130,17 +191,60 @@ export default function Navbar() {
           </NavLink>
 
           {isAuthenticated && isInvestor && (
-            <NavLink
-              to="/perfil"
-              className={({ isActive }) =>
-                `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
-              }
-            >
-              Mi perfil
-            </NavLink>
+            <>
+              <NavLink
+                to="/perfil"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Mi perfil
+              </NavLink>
+              <NavLink
+                to="/contratos"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Contrato
+              </NavLink>
+            </>
           )}
 
-          {isAuthenticated && !isInvestor && <CatalogLinks />}
+          {isAuthenticated && isComi && (
+            <>
+              <NavLink
+                to="/comisionista/perfil"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Mi perfil
+              </NavLink>
+              <NavLink
+                to="/comisionista/contratos"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Contratos
+              </NavLink>
+            </>
+          )}
+
+          {isAuthenticated && isAdmin && (
+            <>
+              <NavLink
+                to="/admin/comisionistas"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Comisionistas
+              </NavLink>
+              <CatalogLinks />
+            </>
+          )}
 
           {!isAuthenticated && (
             <>
