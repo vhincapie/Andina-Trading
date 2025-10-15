@@ -1,17 +1,16 @@
 package co.edu.unbosque.foresta.service.implementations;
 
-import co.edu.unbosque.foresta.exceptions.exceptions.*;
+import co.edu.unbosque.foresta.exceptions.exceptions.BadRequestException;
+import co.edu.unbosque.foresta.exceptions.exceptions.ConflictException;
+import co.edu.unbosque.foresta.exceptions.exceptions.NotFoundException;
 import co.edu.unbosque.foresta.integration.AuthClient;
 import co.edu.unbosque.foresta.integration.CatalogosClient;
 import co.edu.unbosque.foresta.integration.DTO.AuthSignupRequest;
 import co.edu.unbosque.foresta.integration.DTO.AuthSignupResponse;
-import co.edu.unbosque.foresta.configuration.AlpacaMapper;
-import co.edu.unbosque.foresta.model.DTO.*;
-import co.edu.unbosque.foresta.model.entity.AlpacaAccount;
+import co.edu.unbosque.foresta.model.DTO.ComisionistaDTO;
+import co.edu.unbosque.foresta.model.DTO.ComisionistaRegistroRequestDTO;
 import co.edu.unbosque.foresta.model.entity.Comisionista;
-import co.edu.unbosque.foresta.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.foresta.repository.IComisionistaRepository;
-import co.edu.unbosque.foresta.service.interfaces.IAlpacaService;
 import co.edu.unbosque.foresta.service.interfaces.IComisionistaService;
 import feign.FeignException;
 import org.modelmapper.ModelMapper;
@@ -27,23 +26,17 @@ import java.util.stream.Collectors;
 public class ComisionistaServiceImpl implements IComisionistaService {
 
     private final IComisionistaRepository repo;
-    private final IAlpacaAccountRepository alpacaRepo;
     private final AuthClient authClient;
     private final CatalogosClient catClient;
-    private final IAlpacaService alpacaService;
     private final ModelMapper mm;
 
     public ComisionistaServiceImpl(IComisionistaRepository repo,
-                                   IAlpacaAccountRepository alpacaRepo,
                                    AuthClient authClient,
                                    CatalogosClient catClient,
-                                   IAlpacaService alpacaService,
                                    ModelMapper mm) {
         this.repo = repo;
-        this.alpacaRepo = alpacaRepo;
         this.authClient = authClient;
         this.catClient = catClient;
-        this.alpacaService = alpacaService;
         this.mm = mm;
     }
 
@@ -51,19 +44,37 @@ public class ComisionistaServiceImpl implements IComisionistaService {
     @Override
     public ComisionistaDTO registrar(ComisionistaRegistroRequestDTO req, String ip) {
         ComisionistaRegistroRequestDTO n = prepararRegistro(req);
-        AccountResponseDTO alpaca = crearCuentaAlpaca(n, ip);
         Long usuarioId = registrarUsuarioAuth(n);
         Comisionista guardado = persistirComisionista(usuarioId, n);
-        persistirCuentaAlpaca(guardado, alpaca);
         return toDTO(guardado);
     }
 
     @Transactional(readOnly = true)
     @Override
     public ComisionistaDTO perfil(String correoAutenticado) {
-        if (correoAutenticado == null || correoAutenticado.isBlank()) throw new BadRequestException("Correo de autenticación requerido");
-        Comisionista c = repo.findByCorreoIgnoreCase(correoAutenticado).orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
+        if (correoAutenticado == null || correoAutenticado.isBlank()) {
+            throw new BadRequestException("Correo de autenticación requerido");
+        }
+        Comisionista c = repo.findByCorreoIgnoreCase(correoAutenticado)
+                .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
         return toDTO(c);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ComisionistaDTO> listarTodos() {
+        return repo.findAll()
+                .stream()
+                .map(e -> mm.map(e, ComisionistaDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public ComisionistaDTO obtenerPorId(Long id) {
+        Comisionista c = repo.findById(id)
+                .orElseThrow(() -> new NotFoundException("Comisionista not found"));
+        return mm.map(c, ComisionistaDTO.class);
     }
 
     private ComisionistaRegistroRequestDTO prepararRegistro(ComisionistaRegistroRequestDTO req) {
@@ -72,15 +83,6 @@ public class ComisionistaServiceImpl implements IComisionistaService {
         validarNegocioRegistro(n);
         validarUbicacion(n.getPaisId(), n.getCiudadId());
         return n;
-    }
-
-    private AccountResponseDTO crearCuentaAlpaca(ComisionistaRegistroRequestDTO n, String ip) {
-        CreateAccountRequestDTO alpacaReq = AlpacaMapper.fromComisionista(n, ip);
-        try {
-            return alpacaService.createAccount(alpacaReq);
-        } catch (RuntimeException ex) {
-            throw new AlpacaApiException("No se pudo crear la cuenta en Alpaca: " + ex.getMessage());
-        }
     }
 
     private Long registrarUsuarioAuth(ComisionistaRegistroRequestDTO n) {
@@ -100,21 +102,6 @@ public class ComisionistaServiceImpl implements IComisionistaService {
     private Comisionista persistirComisionista(Long usuarioId, ComisionistaRegistroRequestDTO n) {
         Comisionista c = construirComisionista(usuarioId, n);
         return repo.save(c);
-    }
-
-    private void persistirCuentaAlpaca(Comisionista guardado, AccountResponseDTO alpacaResp) {
-        AlpacaAccount cuenta = construirCuentaAlpaca(guardado, alpacaResp);
-        alpacaRepo.save(cuenta);
-    }
-
-    private AlpacaAccount construirCuentaAlpaca(Comisionista c, AccountResponseDTO a) {
-        AlpacaAccount cuenta = new AlpacaAccount();
-        cuenta.setComisionista(c);
-        cuenta.setAlpacaId(a.getId());
-        cuenta.setStatus(a.getStatus());
-        cuenta.setCurrency(a.getCurrency() != null ? a.getCurrency() : "USD");
-        cuenta.setCreatedAt(java.time.LocalDateTime.now());
-        return cuenta;
     }
 
     private void validarNegocioRegistro(ComisionistaRegistroRequestDTO n) {
@@ -145,9 +132,6 @@ public class ComisionistaServiceImpl implements IComisionistaService {
         n.setPaisId(r.getPaisId());
         n.setCiudadId(r.getCiudadId());
         n.setAniosExperiencia(r.getAniosExperiencia());
-        n.setPhoneNumber(r.getPhoneNumber());
-        n.setStreetAddress(r.getStreetAddress());
-        n.setPostalCode(r.getPostalCode());
         return n;
     }
 
@@ -204,21 +188,4 @@ public class ComisionistaServiceImpl implements IComisionistaService {
     private static boolean vacio(String s) { return s == null || s.isBlank(); }
     private static String trim(String s) { return s == null ? null : s.trim(); }
     private static String trimLower(String s) { return s == null ? null : s.trim().toLowerCase(); }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ComisionistaDTO> listarTodos() {
-        return repo.findAll()
-                .stream()
-                .map(e -> mm.map(e, ComisionistaDTO.class))
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public ComisionistaDTO obtenerPorId(Long id) {
-        Comisionista c = repo.findById(id)
-                .orElseThrow(() -> new NotFoundException("Comisionista not found"));
-        return mm.map(c, ComisionistaDTO.class);
-    }
 }

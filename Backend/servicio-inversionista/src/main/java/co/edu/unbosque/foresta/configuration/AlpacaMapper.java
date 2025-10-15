@@ -10,7 +10,7 @@ import java.util.MissingResourceException;
 
 public class AlpacaMapper {
 
-    public static CreateAccountRequestDTO fromComisionista(ComisionistaRegistroRequestDTO src, String ip) {
+    public static CreateAccountRequestDTO fromInversionista(InversionistaRegistroRequestDTO src, String ip) {
         CreateAccountRequestDTO req = new CreateAccountRequestDTO();
 
         String iso3 = resolveIso3(src.getCountryIso3(), src.getCountryIso2(), "COL");
