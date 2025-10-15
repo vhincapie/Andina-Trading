@@ -87,10 +87,12 @@ export default function RegistroInversionistaPage() {
     if (form.contrasena.length < 8)
       return "La contraseña debe tener al menos 8 caracteres.";
     if (form.fechaNacimiento) {
-      if (form.fechaNacimiento < minBirthDate)
+      if (form.fechaNacimiento < minBirthDate) {
         return `La fecha de nacimiento no puede ser anterior a ${minBirthDate}.`;
-      if (form.fechaNacimiento > maxBirthDate)
+      }
+      if (form.fechaNacimiento > maxBirthDate) {
         return "Debes ser mayor de 18 años.";
+      }
     }
     if (!form.paisId) return "Selecciona un país.";
     if (!form.ciudadId) return "Selecciona una ciudad.";
@@ -101,8 +103,10 @@ export default function RegistroInversionistaPage() {
     e.preventDefault();
     setError("");
     setOk("");
+
     const v = validate();
     if (v) return setError(v);
+
     setSending(true);
     try {
       const payload = {
@@ -120,7 +124,10 @@ export default function RegistroInversionistaPage() {
       setOk("Registro exitoso. Redirigiendo al inicio de sesión...");
       setTimeout(() => navigate("/login", { replace: true }), 1200);
     } catch (e) {
+      const code = e?.response?.data?.code;
+      const alpacaMsg = e?.response?.data?.message;
       const msg =
+        (code === "alpaca_error" && alpacaMsg) ||
         e?.response?.data?.message ||
         (e?.response?.status === 409 &&
           "Ya existe un inversionista con ese correo o documento.") ||
@@ -141,6 +148,7 @@ export default function RegistroInversionistaPage() {
       <h1 className="text-xl font-semibold text-center">
         Registro de Inversionista
       </h1>
+
       <ErrorAlert message={error} onClose={() => setError("")} />
       <SuccessAlert message={ok} onClose={() => setOk("")} />
 
@@ -172,7 +180,7 @@ export default function RegistroInversionistaPage() {
           <option value="">Tipo Documento</option>
           <option value="CC">Cédula de Ciudadanía</option>
           <option value="CE">Cédula de Extranjería</option>
-          <option value="PAS">Pasaporte</option>
+          <option value="PASAPORTE">Pasaporte</option>
         </select>
         <input
           className="border p-2 rounded"
@@ -193,6 +201,7 @@ export default function RegistroInversionistaPage() {
         min={minBirthDate}
         max={maxBirthDate}
       />
+
       <input
         type="email"
         className="w-full border p-2 rounded"

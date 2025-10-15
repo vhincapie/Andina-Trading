@@ -28,12 +28,6 @@ public class GlobalExceptionHandler {
                 .body(error("not_found", ex.getMessage()));
     }
 
-    @ExceptionHandler(AlpacaApiException.class)
-    public ResponseEntity<Map<String, Object>> handleAlpaca(AlpacaApiException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(error("alpaca_error", ex.getMessage()));
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleOther(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -14,19 +14,13 @@ public class ComisionistaRegistroRequestDTO {
     private Long paisId;
     private Long ciudadId;
     private Integer aniosExperiencia;
-    private String phoneNumber;
-    private String streetAddress;
-    private String postalCode;
-    private String city;
-    private String state;
-    private String countryIso2;
-    private String countryIso3;
+
 
     public ComisionistaRegistroRequestDTO() {
 
     }
 
-    public ComisionistaRegistroRequestDTO(String nombre, String apellido, String tipoDocumento, String numeroDocumento, LocalDate fechaNacimiento, String correo, String contrasena, Long paisId, Long ciudadId, Integer aniosExperiencia, String phoneNumber, String streetAddress, String postalCode, String city, String state, String countryIso2, String countryIso3) {
+    public ComisionistaRegistroRequestDTO(String nombre, String apellido, String tipoDocumento, String numeroDocumento, LocalDate fechaNacimiento, String correo, String contrasena, Long paisId, Long ciudadId, Integer aniosExperiencia) {
         this.nombre = nombre;
         this.apellido = apellido;
         this.tipoDocumento = tipoDocumento;
@@ -37,13 +31,7 @@ public class ComisionistaRegistroRequestDTO {
         this.paisId = paisId;
         this.ciudadId = ciudadId;
         this.aniosExperiencia = aniosExperiencia;
-        this.phoneNumber = phoneNumber;
-        this.streetAddress = streetAddress;
-        this.postalCode = postalCode;
-        this.city = city;
-        this.state = state;
-        this.countryIso2 = countryIso2;
-        this.countryIso3 = countryIso3;
+
     }
 
     //Getters/Setters
@@ -127,59 +115,5 @@ public class ComisionistaRegistroRequestDTO {
         this.aniosExperiencia = aniosExperiencia;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public String getStreetAddress() {
-        return streetAddress;
-    }
-
-    public void setStreetAddress(String streetAddress) {
-        this.streetAddress = streetAddress;
-    }
-
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getCountryIso2() {
-        return countryIso2;
-    }
-
-    public void setCountryIso2(String countryIso2) {
-        this.countryIso2 = countryIso2;
-    }
-
-    public String getCountryIso3() {
-        return countryIso3;
-    }
-
-    public void setCountryIso3(String countryIso3) {
-        this.countryIso3 = countryIso3;
-    }
 }

@@ -3,8 +3,7 @@ package co.edu.unbosque.foresta.integration;
 import co.edu.unbosque.foresta.model.DTO.CiudadLiteDTO;
 import co.edu.unbosque.foresta.model.DTO.PaisLiteDTO;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 
 @FeignClient(name = "catalogos-service", url = "${catalogos.base-url}")
 public interface CatalogosClient {
@@ -14,4 +13,3 @@ public interface CatalogosClient {
     @GetMapping("/api/catalogos/ciudades/obtener/{id}")
     CiudadLiteDTO obtenerCiudad(@PathVariable("id") Long id);
 }
-

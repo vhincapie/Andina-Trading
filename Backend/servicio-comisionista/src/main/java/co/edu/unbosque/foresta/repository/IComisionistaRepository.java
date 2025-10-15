@@ -13,5 +13,5 @@ public interface IComisionistaRepository extends JpaRepository<Comisionista, Lon
     Optional<Comisionista> findByCorreoIgnoreCase(String correo);
     boolean existsByCorreoIgnoreCase(String correo);
     boolean existsByNumeroDocumento(String numeroDocumento);
-    Page<Comisionista> findByCorreoIgnoreCaseContainingOrNombreIgnoreCaseContainingOrApellidoIgnoreCaseContaining(String trim, String trim1, String trim2, PageRequest pr);
+
 }

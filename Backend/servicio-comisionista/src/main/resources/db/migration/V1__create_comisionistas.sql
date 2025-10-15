@@ -14,14 +14,3 @@ CREATE TABLE IF NOT EXISTS comisionistas (
     actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS alpaca_account (
-                                              id_alpaca_account BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                              alpaca_id VARCHAR(64) NOT NULL UNIQUE,
-    status VARCHAR(50) NOT NULL,
-    currency VARCHAR(10) NOT NULL,
-    id_comisionista BIGINT NOT NULL UNIQUE,
-    created_at DATETIME NOT NULL,
-    CONSTRAINT fk_alpaca_comisionista
-    FOREIGN KEY (id_comisionista) REFERENCES comisionistas(id)
-    ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

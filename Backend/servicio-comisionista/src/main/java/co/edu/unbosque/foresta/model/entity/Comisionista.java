@@ -11,7 +11,6 @@ public class Comisionista {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Relación lógica con el usuario del módulo de autenticación
     @Column(name = "usuario_id", nullable = false)
     private Long usuarioId;
 
