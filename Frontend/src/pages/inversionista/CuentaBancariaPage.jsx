@@ -23,7 +23,6 @@ export default function CuentaBancariaPage() {
     () => Array.isArray(list) && list.length > 0,
     [list]
   );
-
   const bancos = useMemo(() => bancosPorPais[pais] || [], [pais]);
 
   const loadList = async () => {
@@ -32,7 +31,7 @@ export default function CuentaBancariaPage() {
     try {
       const data = await obtenerRelacionesACH();
       setList(Array.isArray(data) ? data : []);
-    } catch (e) {
+    } catch {
       setError("No se pudieron cargar las cuentas asociadas.");
     } finally {
       setLoading(false);
@@ -54,10 +53,19 @@ export default function CuentaBancariaPage() {
     }
   }, [error, ok]);
 
+  const onChangeNumero = (e) => {
+    const soloDigitos = e.target.value.replace(/\D+/g, "").slice(0, 8);
+    setNumeroCuenta(soloDigitos);
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setOk("");
+    if (!/^\d{8}$/.test(numeroCuenta)) {
+      setError("El número de cuenta debe tener exactamente 8 dígitos.");
+      return;
+    }
     try {
       await crearRelacionACH({
         account_owner_name: titular,
@@ -72,7 +80,6 @@ export default function CuentaBancariaPage() {
       setNickname("");
       await loadList();
     } catch (err) {
-      console.error(err.response?.data || err);
       setError("No se pudo asociar la cuenta bancaria.");
     }
   };
@@ -140,7 +147,11 @@ export default function CuentaBancariaPage() {
               <input
                 className="border p-2 rounded w-full"
                 value={numeroCuenta}
-                onChange={(e) => setNumeroCuenta(e.target.value)}
+                onChange={onChangeNumero}
+                inputMode="numeric"
+                pattern="[0-9]{8}"
+                maxLength={8}
+                placeholder="8 dígitos"
                 required
               />
             </div>

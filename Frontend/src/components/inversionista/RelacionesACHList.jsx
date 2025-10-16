@@ -3,6 +3,13 @@ export default function RelacionesACHList({ items = [] }) {
     return <p className="text-gray-600">Aún no tienes cuentas asociadas.</p>;
   }
 
+  const mapTipo = (t) => {
+    const v = String(t || "").toUpperCase();
+    if (v === "CHECKING") return "Corriente";
+    if (v === "SAVINGS") return "Ahorros";
+    return v || "—";
+  };
+
   return (
     <>
       <div className="hidden md:block overflow-x-auto">
@@ -32,7 +39,7 @@ export default function RelacionesACHList({ items = [] }) {
                   ).slice(-4)}
                 </td>
                 <td className="py-2 px-3 text-sm">
-                  {c.bankAccountType || c.bank_account_type}
+                  {mapTipo(c.bankAccountType || c.bank_account_type)}
                 </td>
               </tr>
             ))}
@@ -61,7 +68,7 @@ export default function RelacionesACHList({ items = [] }) {
             </p>
             <p className="text-sm">
               <span className="font-medium">Tipo:</span>{" "}
-              {c.bankAccountType || c.bank_account_type}
+              {mapTipo(c.bankAccountType || c.bank_account_type)}
             </p>
             <p className="text-sm">
               <span className="font-medium">Estado:</span> {c.status || "—"}
