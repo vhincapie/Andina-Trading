@@ -81,6 +81,15 @@ public class InversionistaServiceImpl implements IInversionistaService {
         return mm.map(c, InversionistaDTO.class);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public AlpacaAccountDTO miAlpaca(String correoAutenticado) {
+        Inversionista inv = cargarPorCorreo(correoAutenticado);
+        AlpacaAccount acc = alpacaRepo.findByInversionista(inv)
+                .orElseThrow(() -> new NotFoundException("Cuenta Alpaca no asociada"));
+        return new AlpacaAccountDTO(acc.getAlpacaId(), acc.getStatus(), acc.getCurrency());
+    }
+
     private void crearYAsociarCuentaAlpaca(Inversionista inversionista, InversionistaRegistroRequestDTO n) {
         try {
             if (alpacaRepo.existsByInversionista(inversionista)) {

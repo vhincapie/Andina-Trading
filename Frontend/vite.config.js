@@ -11,13 +11,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      "/api/inversionistas": {
-        target: "http://localhost:8083",
+      "/api/catalogos": {
+        target: "http://localhost:8082",
         changeOrigin: true,
         secure: false,
       },
-      "/api": {
-        target: "http://localhost:8082",
+      "/api/inversionistas": {
+        target: "http://localhost:8083",
         changeOrigin: true,
         secure: false,
       },
@@ -28,6 +28,11 @@ export default defineConfig({
       },
       "/api/contratos": {
         target: "http://localhost:8085",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/api/cuentas": {
+        target: "http://localhost:8086",
         changeOrigin: true,
         secure: false,
       },

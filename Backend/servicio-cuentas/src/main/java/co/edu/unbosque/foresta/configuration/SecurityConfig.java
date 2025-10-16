@@ -33,10 +33,12 @@ public class SecurityConfig {
                 .sessionManagement(sm->sm.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex->ex.authenticationEntryPoint(restEntry()).accessDeniedHandler(restDenied()))
                 .authorizeHttpRequests(auth->auth
+                        .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/inversionistas/registrar").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/inversionistas/perfil").authenticated()
-                        .requestMatchers(HttpMethod.PUT,"/api/inversionistas/actualizar").authenticated()
+                        .requestMatchers(HttpMethod.GET,"/api/cuentas/saldo").hasRole("INVERSIONISTA")
+                        .requestMatchers(HttpMethod.POST,"/api/cuentas/ach").hasRole("INVERSIONISTA")
+                        .requestMatchers(HttpMethod.GET,"/api/cuentas/ach").hasRole("INVERSIONISTA")
+                        .requestMatchers(HttpMethod.POST,"/api/cuentas/transferencias").hasRole("INVERSIONISTA")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
