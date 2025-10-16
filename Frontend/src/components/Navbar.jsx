@@ -101,6 +101,26 @@ export default function Navbar() {
                   >
                     Contrato
                   </NavLink>
+                  <NavLink
+                    to="/cuenta-bancaria"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Cuenta bancaria
+                  </NavLink>
+                  <NavLink
+                    to="/recargar"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Recargar
+                  </NavLink>
                 </>
               )}
 
@@ -207,6 +227,22 @@ export default function Navbar() {
                 }
               >
                 Contrato
+              </NavLink>
+              <NavLink
+                to="/cuenta-bancaria"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Cuenta bancaria
+              </NavLink>
+              <NavLink
+                to="/recargar"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Recargar
               </NavLink>
             </>
           )}

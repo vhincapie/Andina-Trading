@@ -3,6 +3,7 @@ package co.edu.unbosque.foresta.controller.interfaces;
 import co.edu.unbosque.foresta.model.DTO.InversionistaDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaRegistroRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaUpdateRequestDTO;
+import co.edu.unbosque.foresta.model.DTO.AlpacaAccountDTO;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -22,4 +23,8 @@ public interface IInversionistaController {
 
     @GetMapping("/{id}")
     InversionistaDTO obtenerPorId(@PathVariable Long id);
+
+    @GetMapping("/mi/alpaca")
+    AlpacaAccountDTO miAlpaca(@AuthenticationPrincipal String username);
+
 }

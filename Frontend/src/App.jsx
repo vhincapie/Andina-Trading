@@ -23,6 +23,9 @@ import PerfilComisionistaPage from "./pages/comisionista/PerfilComisionistaPage"
 import ContratosInversionistaPage from "./pages/contratos/ContratosInversionistaPage";
 import ContratosComisionistaPage from "./pages/comisionista/ContratosComisionistaPage";
 
+import CuentaBancariaPage from "./pages/inversionista/CuentaBancariaPage";
+import RecargaPage from "./pages/inversionista/RecargaPage";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -52,6 +55,24 @@ export default function App() {
             element={
               <InvestorRoute>
                 <ContratosInversionistaPage />
+              </InvestorRoute>
+            }
+          />
+
+          <Route
+            path="/cuenta-bancaria"
+            element={
+              <InvestorRoute>
+                <CuentaBancariaPage />
+              </InvestorRoute>
+            }
+          />
+
+          <Route
+            path="/recargar"
+            element={
+              <InvestorRoute>
+                <RecargaPage />
               </InvestorRoute>
             }
           />

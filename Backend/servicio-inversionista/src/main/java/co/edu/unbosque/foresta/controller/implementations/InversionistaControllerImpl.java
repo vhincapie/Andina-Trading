@@ -4,6 +4,7 @@ import co.edu.unbosque.foresta.controller.interfaces.IInversionistaController;
 import co.edu.unbosque.foresta.model.DTO.InversionistaDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaRegistroRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaUpdateRequestDTO;
+import co.edu.unbosque.foresta.model.DTO.AlpacaAccountDTO;
 import co.edu.unbosque.foresta.service.interfaces.IInversionistaService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,6 +51,15 @@ public class InversionistaControllerImpl implements IInversionistaController {
     @PreAuthorize("hasAnyRole('COMISIONISTA','INVERSIONISTA','ADMIN')")
     public InversionistaDTO obtenerPorId(Long id) {
         return service.obtenerPorId(id);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('INVERSIONISTA')")
+    public AlpacaAccountDTO miAlpaca(@AuthenticationPrincipal String username) {
+        if (username == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        }
+        return service.miAlpaca(username);
     }
 
 }

@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/inversionistas/registrar").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/inversionistas/perfil").authenticated()
                         .requestMatchers(HttpMethod.PUT,"/api/inversionistas/actualizar").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/inversionistas/mi/alpaca").hasRole("INVERSIONISTA")
                         .requestMatchers(HttpMethod.GET,"/api/inversionistas/{id}").hasAnyRole("INVERSIONISTA","COMISIONISTA","ADMIN")
                         .anyRequest().authenticated()
                 )

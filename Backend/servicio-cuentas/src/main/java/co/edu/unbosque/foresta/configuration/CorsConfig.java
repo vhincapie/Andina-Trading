@@ -16,7 +16,9 @@ public class CorsConfig {
         c.setAllowedOrigins(List.of("http://localhost:5173"));
         c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         c.setAllowedHeaders(List.of("*"));
+        c.setExposedHeaders(List.of("X-Notice","x-notice"));
         c.setAllowCredentials(true);
+
         var src = new UrlBasedCorsConfigurationSource();
         src.registerCorsConfiguration("/**", c);
         return src;
