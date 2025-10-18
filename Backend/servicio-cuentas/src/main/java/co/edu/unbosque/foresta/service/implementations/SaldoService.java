@@ -2,12 +2,11 @@ package co.edu.unbosque.foresta.service.implementations;
 
 import co.edu.unbosque.foresta.exceptions.exceptions.BadRequestException;
 import co.edu.unbosque.foresta.exceptions.exceptions.NotFoundException;
-import co.edu.unbosque.foresta.integration.InversionistaClient;
 import co.edu.unbosque.foresta.integration.DTO.MiAlpacaDTO;
+import co.edu.unbosque.foresta.integration.InversionistaClient;
 import co.edu.unbosque.foresta.model.DTO.TradingDetailDTO;
 import co.edu.unbosque.foresta.repository.ITransferLogRepository;
 import co.edu.unbosque.foresta.service.interfaces.ISaldoService;
-import co.edu.unbosque.foresta.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -23,8 +22,10 @@ public class SaldoService implements ISaldoService {
 
     @Value("${alpaca.broker.account-status-url}")
     private String accountStatusUrl;
+
     @Value("${alpaca.broker.api.key}")
     private String apiKey;
+
     @Value("${alpaca.broker.api.secret}")
     private String apiSecret;
 
@@ -46,34 +47,12 @@ public class SaldoService implements ISaldoService {
     @Override
     public String calcularAvisoParaUsuarioActual() {
         MiAlpacaDTO mi = cargarCuentaAlpaca();
-
-        boolean fueraHorario = TimeUtils.isAfterMarketHours() || TimeUtils.isWeekend();
-        boolean reciente10 = huboTransferenciaReciente(mi.getAlpacaId(), 10);
-        boolean reciente60 = huboTransferenciaReciente(mi.getAlpacaId(), 60);
-        boolean huboHoy = huboTransferenciaHoy(mi.getAlpacaId());
-
-        if (fueraHorario && huboHoy) {
-            return "Transferencia creada fuera de horario. Se reflejará el siguiente día hábil.";
-        }
-        if (reciente10) {
-            return "La transferencia fue creada hace poco. El saldo puede tardar algunos minutos en reflejarse.";
-        }
-        if (reciente60) {
-            return "La transferencia está en compensación. Intenta nuevamente más tarde.";
-        }
-        return null;
-    }
-
-    private boolean huboTransferenciaReciente(String alpacaAccountId, int ventanaMinutos) {
-        return transferLogRepository.findTop1ByAlpacaAccountIdOrderByCreatedAtDesc(alpacaAccountId)
-                .map(last -> last.getCreatedAt().isAfter(TimeUtils.nowNY().minusMinutes(ventanaMinutos)))
-                .orElse(false);
-    }
-
-    private boolean huboTransferenciaHoy(String alpacaAccountId) {
-        return transferLogRepository.existsByAlpacaAccountIdAndCreatedAtBetween(
-                alpacaAccountId, TimeUtils.todayStartNY(), TimeUtils.todayEndNY()
-        );
+        return transferLogRepository.findTop1ByAlpacaAccountIdOrderByCreatedAtDesc(mi.getAlpacaId())
+                .map(last -> {
+                    String st = last.getStatus() == null ? "" : last.getStatus().toUpperCase();
+                    return st.startsWith("COMPLETE") ? null : "Transferencia en proceso. El saldo cambiará automáticamente al completarse.";
+                })
+                .orElse(null);
     }
 
     private MiAlpacaDTO cargarCuentaAlpaca() {

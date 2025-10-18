@@ -2,8 +2,8 @@ package co.edu.unbosque.foresta.service.implementations;
 
 import co.edu.unbosque.foresta.exceptions.exceptions.BadRequestException;
 import co.edu.unbosque.foresta.exceptions.exceptions.NotFoundException;
-import co.edu.unbosque.foresta.integration.InversionistaClient;
 import co.edu.unbosque.foresta.integration.DTO.MiAlpacaDTO;
+import co.edu.unbosque.foresta.integration.InversionistaClient;
 import co.edu.unbosque.foresta.model.DTO.TransferCreateRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.TransferResponseDTO;
 import co.edu.unbosque.foresta.model.entity.AccountACHRelationShip;
@@ -53,16 +53,36 @@ public class TransferService implements ITransferService {
 
     @Override
     public TransferResponseDTO crear(TransferCreateRequestDTO req) {
-        TransferCreateRequestDTO normalizado = normalizar(req);
-        validarMonto(normalizado);
-        autocompletarCampos(normalizado);
+        TransferCreateRequestDTO dto = prepararSolicitud(req);
         MiAlpacaDTO mi = cargarCuentaAlpaca();
         bloquearUnaPorDia(mi.getAlpacaId());
-        normalizado.setRelationshipId(obtenerRelacionACH(mi.getAlpacaId()));
-        String url = construirUrlTransfer(mi.getAlpacaId());
-        TransferResponseDTO resp = ejecutarTransferencia(url, normalizado);
-        registrarTransferencia(mi.getAlpacaId(), resp, normalizado.getAmount());
+        dto.setRelationshipId(obtenerRelacionACH(mi.getAlpacaId()));
+        TransferResponseDTO resp = ejecutarTransferencia(construirUrlTransfer(mi.getAlpacaId()), dto);
+        registrarTransferencia(mi.getAlpacaId(), resp, dto.getAmount());
         return resp;
+    }
+
+    private TransferCreateRequestDTO prepararSolicitud(TransferCreateRequestDTO r) {
+        TransferCreateRequestDTO n = new TransferCreateRequestDTO();
+        n.setAmount(r.getAmount());
+        n.setDirection("INCOMING");
+        n.setTiming("immediate");
+        n.setTransferType("ach");
+        n.setNote("Recarga automática Andina Trading");
+        validarMonto(n);
+        return n;
+    }
+
+    private void validarMonto(TransferCreateRequestDTO dto) {
+        if (dto.getAmount() == null || dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("amount debe ser mayor a 0");
+        }
+    }
+
+    private MiAlpacaDTO cargarCuentaAlpaca() {
+        MiAlpacaDTO mi = inversionistaClient.miAlpaca();
+        if (mi == null || mi.getAlpacaId() == null) throw new NotFoundException("No se encontró cuenta Alpaca asociada");
+        return mi;
     }
 
     private void bloquearUnaPorDia(String alpacaAccountId) {
@@ -70,22 +90,6 @@ public class TransferService implements ITransferService {
                 alpacaAccountId, TimeUtils.todayStartNY(), TimeUtils.todayEndNY()
         );
         if (existe) throw new BadRequestException("Ya registraste una transferencia hoy. Intenta nuevamente mañana.");
-    }
-
-    private void registrarTransferencia(String alpacaAccountId, TransferResponseDTO resp, BigDecimal amount) {
-        TransferLog l = new TransferLog();
-        l.setAlpacaAccountId(alpacaAccountId);
-        l.setExternalId(resp.getId());
-        l.setAmount(amount);
-        l.setStatus(resp.getStatus());
-        l.setCreatedAt(TimeUtils.nowNY());
-        transferLogRepository.save(l);
-    }
-
-    private MiAlpacaDTO cargarCuentaAlpaca() {
-        MiAlpacaDTO mi = inversionistaClient.miAlpaca();
-        if (mi == null || mi.getAlpacaId() == null) throw new NotFoundException("No se encontró cuenta Alpaca asociada");
-        return mi;
     }
 
     private String obtenerRelacionACH(String alpacaAccountId) {
@@ -111,26 +115,12 @@ public class TransferService implements ITransferService {
         }
     }
 
-    private TransferCreateRequestDTO normalizar(TransferCreateRequestDTO r) {
-        TransferCreateRequestDTO n = new TransferCreateRequestDTO();
-        n.setAmount(r.getAmount());
-        n.setDirection("INCOMING");
-        n.setTiming("immediate");
-        n.setTransferType("ach");
-        n.setNote("Recarga automática Andina Trading");
-        return n;
-    }
-
-    private void validarMonto(TransferCreateRequestDTO dto) {
-        if (dto.getAmount() == null || dto.getAmount().compareTo(BigDecimal.ZERO) <= 0)
-            throw new BadRequestException("amount debe ser mayor a 0");
-    }
-
-    private void autocompletarCampos(TransferCreateRequestDTO dto) {
-        if (vacio(dto.getDirection())) dto.setDirection("INCOMING");
-        if (vacio(dto.getTiming())) dto.setTiming("immediate");
-        if (vacio(dto.getTransferType())) dto.setTransferType("ach");
-        if (vacio(dto.getNote())) dto.setNote("Recarga automática Andina Trading");
+    private void registrarTransferencia(String alpacaAccountId, TransferResponseDTO resp, BigDecimal amount) {
+        TransferLog log = mm.map(resp, TransferLog.class);
+        log.setAlpacaAccountId(alpacaAccountId);
+        log.setAmount(amount);
+        log.setCreatedAt(TimeUtils.nowNY());
+        transferLogRepository.save(log);
     }
 
     private HttpHeaders headersJson() {
