@@ -1,4 +1,3 @@
-// src/main/java/.../configuration/WebClientConfig.java
 package co.edu.unbosque.foresta.configuration;
 
 import io.netty.channel.ChannelOption;
