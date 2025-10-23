@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface IAlpacaAccountRepository extends JpaRepository<AlpacaAccount, Long> {
     boolean existsByInversionista(Inversionista inversionista);
     Optional<AlpacaAccount> findByInversionista(Inversionista inversionista);
+
+    Optional<AlpacaAccount> findByInversionista_Id(Long inversionistaId);
 }
