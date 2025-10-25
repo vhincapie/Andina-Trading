@@ -5,6 +5,7 @@ import co.edu.unbosque.foresta.model.DTO.InversionistaDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaRegistroRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaUpdateRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.AlpacaAccountDTO;
+import co.edu.unbosque.foresta.service.interfaces.IAlpacaAccountQueryService;
 import co.edu.unbosque.foresta.service.interfaces.IInversionistaService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,9 +19,11 @@ import jakarta.validation.Valid;
 public class InversionistaControllerImpl implements IInversionistaController {
 
     private final IInversionistaService service;
+    private final IAlpacaAccountQueryService alpacaQuery;
 
-    public InversionistaControllerImpl(IInversionistaService service) {
+    public InversionistaControllerImpl(IInversionistaService service, IAlpacaAccountQueryService alpacaQuery) {
         this.service = service;
+        this.alpacaQuery = alpacaQuery;
     }
 
     @Override
@@ -60,6 +63,15 @@ public class InversionistaControllerImpl implements IInversionistaController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
         }
         return service.miAlpaca(username);
+    }
+
+    @Override
+    @PreAuthorize("hasAnyRole('COMISIONISTA','ADMIN','INVERSIONISTA')")
+    public AlpacaAccountDTO alpacaPorId(Long id) {
+
+        InversionistaDTO inv = service.obtenerPorId(id);
+        if (inv == null) throw new RuntimeException("Inversionista no encontrado");
+        return alpacaQuery.getByInversionistaId(id);
     }
 
 }

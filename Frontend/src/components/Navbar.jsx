@@ -68,6 +68,7 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             <span className="font-semibold text-gray-900">Foresta Trading</span>
 
+            {/* DESKTOP */}
             <div className="hidden md:flex items-center gap-1 ml-2">
               <NavLink
                 to="/"
@@ -79,6 +80,7 @@ export default function Navbar() {
                 Inicio
               </NavLink>
 
+              {/* --- Inversionista --- */}
               {isAuthenticated && isInvestor && (
                 <>
                   <NavLink
@@ -121,9 +123,40 @@ export default function Navbar() {
                   >
                     Recargar
                   </NavLink>
+
+                  {/* Órdenes (INV) */}
+                  <NavLink
+                    to="/ordenes/crear"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Comprar
+                  </NavLink>
+                  
+                  <NavLink
+                    to="/ordenes/vender"
+                    className={({ isActive }) => `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`}
+                  >
+                    Vender
+                  </NavLink>
+                  
+                  <NavLink
+                    to="/ordenes/mis-ordenes"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Mis órdenes
+                  </NavLink>
                 </>
               )}
 
+              {/* --- Comisionista --- */}
               {isAuthenticated && isComi && (
                 <>
                   <NavLink
@@ -146,9 +179,30 @@ export default function Navbar() {
                   >
                     Contratos
                   </NavLink>
+                  <NavLink
+                    to="/comisionista/ordenes"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Órdenes
+                  </NavLink>
+                  <NavLink
+                    to="/comisionista/comisiones"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Comisiones
+                  </NavLink>
                 </>
               )}
 
+              {/* --- Admin --- */}
               {isAuthenticated && isAdmin && (
                 <NavLink
                   to="/admin/comisionistas"
@@ -163,6 +217,7 @@ export default function Navbar() {
             </div>
           </div>
 
+          {/* Usuario / Autenticación */}
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <>
@@ -199,6 +254,7 @@ export default function Navbar() {
           </div>
         </div>
 
+        {/* MOBILE */}
         <div className="md:hidden flex gap-1 pb-3">
           <NavLink
             to="/"
@@ -210,6 +266,7 @@ export default function Navbar() {
             Inicio
           </NavLink>
 
+          {/* --- Inversionista (MOBILE) --- */}
           {isAuthenticated && isInvestor && (
             <>
               <NavLink
@@ -244,9 +301,26 @@ export default function Navbar() {
               >
                 Recargar
               </NavLink>
+              <NavLink
+                to="/ordenes/nueva"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Nueva orden
+              </NavLink>
+              <NavLink
+                to="/ordenes/mis-ordenes"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Mis órdenes
+              </NavLink>
             </>
           )}
 
+          {/* --- Comisionista (MOBILE) --- */}
           {isAuthenticated && isComi && (
             <>
               <NavLink
@@ -265,9 +339,26 @@ export default function Navbar() {
               >
                 Contratos
               </NavLink>
+              <NavLink
+                to="/comisionista/ordenes"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Órdenes
+              </NavLink>
+              <NavLink
+                to="/comisionista/comisiones"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Comisiones
+              </NavLink>
             </>
           )}
 
+          {/* --- Admin (MOBILE) --- */}
           {isAuthenticated && isAdmin && (
             <>
               <NavLink

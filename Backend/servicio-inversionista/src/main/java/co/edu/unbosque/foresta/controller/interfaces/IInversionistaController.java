@@ -27,4 +27,7 @@ public interface IInversionistaController {
     @GetMapping("/mi/alpaca")
     AlpacaAccountDTO miAlpaca(@AuthenticationPrincipal String username);
 
+    @GetMapping("/{id}/alpaca")
+    AlpacaAccountDTO alpacaPorId(@PathVariable Long id);
+
 }

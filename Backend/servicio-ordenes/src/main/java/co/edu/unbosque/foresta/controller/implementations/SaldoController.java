@@ -1,0 +1,25 @@
+package co.edu.unbosque.foresta.controller.implementations;
+
+import co.edu.unbosque.foresta.controller.interfaces.ISaldoAPI;
+import co.edu.unbosque.foresta.model.DTO.TradingDetailDTO;
+import co.edu.unbosque.foresta.service.interfaces.ISaldoService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class SaldoController implements ISaldoAPI {
+
+    private final ISaldoService saldoService;
+
+    public SaldoController(ISaldoService saldoService) {
+        this.saldoService = saldoService;
+    }
+
+    @PreAuthorize("hasRole('INVERSIONISTA')")
+    @Override
+    public ResponseEntity<TradingDetailDTO> obtener() {
+        TradingDetailDTO dto = saldoService.obtenerSaldoUsuarioActual();
+        return ResponseEntity.ok(dto);
+    }
+}
