@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const catalogosApi = axios.create({
-  baseURL: "/api/catalogos",
+  baseURL: (import.meta.env.VITE_API_BASE_URL || "") + "/api/catalogos",
   withCredentials: true,
 });
 

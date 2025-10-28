@@ -1,9 +1,7 @@
 import axios from "axios";
 
 const inversionistasApi = axios.create({
-  baseURL:
-    (import.meta.env.VITE_INVERSIONISTAS_BASE_URL || "") +
-    "/api/inversionistas",
+  baseURL: (import.meta.env.VITE_API_BASE_URL || "") + "/api/inversionistas",
   withCredentials: true,
 });
 

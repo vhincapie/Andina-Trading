@@ -1,12 +1,8 @@
 import axios from "axios";
 
-const base = import.meta.env.VITE_CUENTAS_BASE_URL
-  ? `${import.meta.env.VITE_CUENTAS_BASE_URL}/api/cuentas`
-  : "/api/cuentas";
-
 const cuentasApi = axios.create({
-  baseURL: base,
-  withCredentials: false,
+  baseURL: (import.meta.env.VITE_API_BASE_URL || "") + "/api/cuentas",
+  withCredentials: true, 
 });
 
 cuentasApi.interceptors.request.use((config) => {

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const ordenesApi = axios.create({
-  baseURL: (import.meta.env.VITE_ORDENES_BASE_URL || "") + "/api",
+  baseURL: (import.meta.env.VITE_API_BASE_URL || "") + "/api",
   withCredentials: true,
 });
 
