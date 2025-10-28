@@ -1,112 +1,82 @@
+// src/main/java/co/edu/unbosque/foresta/integration/AlpacaTradingClient.java
 package co.edu.unbosque.foresta.integration;
 
 import co.edu.unbosque.foresta.exceptions.exceptions.BadRequestException;
 import co.edu.unbosque.foresta.model.DTO.OrderCreateRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.OrderDTO;
 import co.edu.unbosque.foresta.model.DTO.PositionDTO;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
 import java.util.Arrays;
 import java.util.List;
 
 @Component
 public class AlpacaTradingClient {
-
     private final RestTemplate rest;
-    private final ObjectMapper mapper = new ObjectMapper();
+    @Value("${alpaca.broker.api.key}")    private String apiKey;
+    @Value("${alpaca.broker.api.secret}") private String apiSecret;
+    @Value("${alpaca.trading.orders-url}") private String ordersBaseUrl;
 
-    @Value("${alpaca.broker.api.key}")
-    private String apiKey;
-
-    @Value("${alpaca.broker.api.secret}")
-    private String apiSecret;
-
-    @Value("${alpaca.trading.orders-url}")
-    private String ordersBaseUrl;
-
-    public AlpacaTradingClient(RestTemplate rest) {
+    public AlpacaTradingClient(@Qualifier("externalRestTemplate") RestTemplate rest) {
         this.rest = rest;
     }
 
-    public OrderDTO crearOrden(String alpacaAccountId, OrderCreateRequestDTO req) {
-        String url = ordersBaseUrl + "/" + alpacaAccountId + "/orders";
-
+    private HttpHeaders alpacaHeaders() {
         HttpHeaders h = new HttpHeaders();
-        h.setBasicAuth(apiKey, apiSecret);
-        h.setContentType(MediaType.APPLICATION_JSON);
+        h.set("APCA-API-KEY-ID", apiKey);
+        h.set("APCA-API-SECRET-KEY", apiSecret);
+        h.setAccept(List.of(MediaType.APPLICATION_JSON));
+        return h;
+    }
 
+    public List<PositionDTO> listarPosiciones(String accountId) {
+        String url = String.format("%s/%s/positions", ordersBaseUrl, accountId);
         try {
-            ResponseEntity<String> res = rest.exchange(
-                    url,
-                    HttpMethod.POST,
-                    new HttpEntity<>(req, h),
-                    String.class
-            );
-
-            if (!res.getStatusCode().is2xxSuccessful() || res.getBody() == null) {
-                throw new BadRequestException("Alpaca respondió " + res.getStatusCode().value());
-            }
-
-            JsonNode n = mapper.readTree(res.getBody());
-
-            OrderDTO out = new OrderDTO();
-            out.setId(getText(n, "id"));
-            out.setAlpacaOrderId(getText(n, "id"));
-            out.setStatus(getText(n, "status"));
-
-            out.setSymbol(getText(n, "symbol"));
-            out.setQty(getText(n, "qty"));
-            out.setOrderType(getText(n, "type"));
-            out.setSide(getText(n, "side"));
-            out.setTimeInForce(getText(n, "time_in_force"));
-
-            out.setLimitPrice(getText(n, "limit_price"));
-            out.setStopPrice(getText(n, "stop_price"));
-
-            return out;
-
+            HttpEntity<Void> entity = new HttpEntity<>(alpacaHeaders());
+            ResponseEntity<PositionDTO[]> res = rest.exchange(url, HttpMethod.GET, entity, PositionDTO[].class);
+            return res.getBody() != null ? Arrays.asList(res.getBody()) : List.of();
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             String body = e.getResponseBodyAsString();
-            int code = e.getStatusCode().value();
-            String msg = (body != null && !body.isBlank())
-                    ? "Alpaca (" + code + "): " + body
-                    : "Alpaca (" + code + ")";
-            throw new BadRequestException(msg);
+            throw new BadRequestException("Alpaca (" + e.getStatusCode().value() + "): " + body);
         } catch (Exception e) {
-            throw new BadRequestException("Error al llamar Alpaca: " + e.getMessage());
+            throw new BadRequestException("Error llamando Alpaca posiciones: " + e.getMessage());
         }
     }
 
-    private static String getText(JsonNode n, String field) {
-        return (n != null && n.hasNonNull(field)) ? n.get(field).asText() : null;
+
+    public OrderDTO crearOrden(String accountId, OrderCreateRequestDTO req) {
+        String url = String.format("%s/%s/orders", ordersBaseUrl, accountId);
+        try {
+            HttpHeaders h = alpacaHeaders();
+            h.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<OrderDTO> res = rest.exchange(
+                    url, HttpMethod.POST, new HttpEntity<>(req, h), OrderDTO.class
+            );
+            return res.getBody();
+        } catch (RestClientResponseException e) {
+            throw new BadRequestException("Alpaca (" + e.getRawStatusCode() + "): " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            throw new BadRequestException("Error creando orden Alpaca: " + e.getMessage());
+        }
     }
 
-    public OrderDTO obtenerOrden(String alpacaAccountId, String alpacaOrderId) {
-        String url = ordersBaseUrl + "/" + alpacaAccountId + "/orders/" + alpacaOrderId;
-        HttpHeaders h = new HttpHeaders();
-        h.setBasicAuth(apiKey, apiSecret);
-        h.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
-        ResponseEntity<OrderDTO> res =
-                rest.exchange(url, HttpMethod.GET, new HttpEntity<>(h), OrderDTO.class);
-        return res.getBody();
-    }
-
-    public List<PositionDTO> listarPosiciones(String alpacaAccountId) {
-        String url = ordersBaseUrl + "/" + alpacaAccountId + "/positions";
-        HttpHeaders h = new HttpHeaders();
-        h.setBasicAuth(apiKey, apiSecret);
-        h.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Void> entity = new HttpEntity<>(h);
-        ResponseEntity<PositionDTO[]> res =
-                rest.exchange(url, HttpMethod.GET, entity, PositionDTO[].class);
-        PositionDTO[] arr = res.getBody();
-        return arr != null ? Arrays.asList(arr) : List.of();
+    public OrderDTO obtenerOrden(String accountId, String alpacaOrderId) {
+        String url = String.format("%s/%s/orders/%s", ordersBaseUrl, accountId, alpacaOrderId);
+        try {
+            ResponseEntity<OrderDTO> res = rest.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(alpacaHeaders()), OrderDTO.class
+            );
+            return res.getBody();
+        } catch (RestClientResponseException e) {
+            throw new BadRequestException("Alpaca (" + e.getRawStatusCode() + "): " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            throw new BadRequestException("Error consultando orden Alpaca: " + e.getMessage());
+        }
     }
 }

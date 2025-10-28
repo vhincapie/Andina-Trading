@@ -1,8 +1,10 @@
 package co.edu.unbosque.foresta.model.DTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PositionDTO {
 
     @JsonProperty("symbol")

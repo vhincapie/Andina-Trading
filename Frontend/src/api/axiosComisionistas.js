@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const comisionistasApi = axios.create({
-  baseURL:
-    (import.meta.env.VITE_COMISIONISTAS_BASE_URL || "") + "/api/comisionistas",
+  baseURL: (import.meta.env.VITE_API_BASE_URL || "") + "/api/comisionistas",
   withCredentials: true,
 });
 

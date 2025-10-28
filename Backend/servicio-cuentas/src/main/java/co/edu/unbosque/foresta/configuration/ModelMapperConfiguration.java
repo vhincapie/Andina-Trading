@@ -16,7 +16,7 @@ public class ModelMapperConfiguration {
 
         mm.typeMap(ResponseAccountACHDTO.class, AccountACHRelationShip.class)
                 .addMappings(map -> {
-                    map.skip(AccountACHRelationShip::setId);         
+                    map.skip(AccountACHRelationShip::setId);
                     map.map(ResponseAccountACHDTO::getId, AccountACHRelationShip::setAchId);
                     map.map(ResponseAccountACHDTO::getAccountOwnerName, AccountACHRelationShip::setAccountOwnerName);
                     map.map(ResponseAccountACHDTO::getBankAccountType, AccountACHRelationShip::setBankAccountType);

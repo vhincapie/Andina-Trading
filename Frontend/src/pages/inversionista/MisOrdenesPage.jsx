@@ -6,6 +6,12 @@ export default function MisOrdenesPage() {
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
 
+  const getRowKey = (o, idx) =>
+    o?.dbId ??
+    o?.id ??
+    o?.alpacaOrderId ??
+    `${o?.symbol || "?"}-${o?.creadoEn || idx}-${idx}`;
+
   useEffect(() => {
     getMisOrdenes()
       .then(setItems)
@@ -39,12 +45,10 @@ export default function MisOrdenesPage() {
                 </td>
               </tr>
             ) : (
-              items.map((o) => (
-                <tr key={o.id} className="border-t">
+              items.map((o, idx) => (
+                <tr key={getRowKey(o, idx)} className="border-t">
                   <td className="p-2">
-                    {o.creadoEn
-                      ? new Date(o.creadoEn).toLocaleString()
-                      : "—"}
+                    {o.creadoEn ? new Date(o.creadoEn).toLocaleString() : "—"}
                   </td>
                   <td className="p-2 font-mono">{o.symbol}</td>
                   <td className="p-2 text-right">{o.qty}</td>

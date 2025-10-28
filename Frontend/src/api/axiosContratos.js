@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const contratosApi = axios.create({
-  baseURL: (import.meta.env.VITE_CONTRATOS_BASE_URL || "") + "/api/contratos",
+  baseURL: (import.meta.env.VITE_API_BASE_URL || "") + "/api/contratos",
   withCredentials: true,
 });
 

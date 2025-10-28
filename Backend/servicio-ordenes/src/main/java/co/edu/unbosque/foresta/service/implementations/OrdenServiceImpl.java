@@ -7,7 +7,8 @@ import co.edu.unbosque.foresta.integration.ContratosClient;
 import co.edu.unbosque.foresta.integration.DTO.AlpacaAccountDTO;
 import co.edu.unbosque.foresta.integration.DTO.ContratoActivoDTO;
 import co.edu.unbosque.foresta.integration.DTO.InversionistaDTO;
-import co.edu.unbosque.foresta.integration.InversionistasClient;
+import co.edu.unbosque.foresta.integration.InversionistasAuthClient;
+import co.edu.unbosque.foresta.integration.InversionistasInternalClient;
 import co.edu.unbosque.foresta.model.DTO.*;
 import co.edu.unbosque.foresta.model.entity.Order;
 import co.edu.unbosque.foresta.repository.IOrderRepository;
@@ -15,8 +16,12 @@ import co.edu.unbosque.foresta.service.interfaces.IPrecioService;
 import co.edu.unbosque.foresta.service.interfaces.IOrdenService;
 import co.edu.unbosque.foresta.service.interfaces.ISaldoService;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -29,9 +34,11 @@ import java.util.*;
 @Service
 public class OrdenServiceImpl implements IOrdenService {
 
+    private final RestTemplate restTemplate;
     private final IOrderRepository repo;
     private final ContratosClient contratos;
-    private final InversionistasClient inversionistas;
+    private final InversionistasInternalClient inversionistasInternal;
+    private final InversionistasAuthClient inversionistasAuth;
     private final AlpacaTradingClient alpaca;
     private final IPrecioService precios;
     private final ISaldoService saldoService;
@@ -43,18 +50,22 @@ public class OrdenServiceImpl implements IOrdenService {
 
     public OrdenServiceImpl(IOrderRepository repo,
                             ContratosClient contratos,
-                            InversionistasClient inversionistas,
+                            InversionistasInternalClient inversionistasInternal,
+                            InversionistasAuthClient inversionistasAuth,
                             AlpacaTradingClient alpaca,
                             IPrecioService precios,
                             ISaldoService saldoService,
-                            ModelMapper mm) {
+                            ModelMapper mm,
+                            @Qualifier("internalRestTemplate") RestTemplate restTemplate) {
         this.repo = repo;
         this.contratos = contratos;
-        this.inversionistas = inversionistas;
+        this.inversionistasInternal = inversionistasInternal;
+        this.inversionistasAuth = inversionistasAuth;
         this.alpaca = alpaca;
         this.precios = precios;
         this.saldoService = saldoService;
         this.mm = mm;
+        this.restTemplate = restTemplate;
     }
 
     @Transactional
@@ -134,15 +145,13 @@ public class OrdenServiceImpl implements IOrdenService {
         Map<Long, String[]> cacheInv = new HashMap<>();
         list.stream().map(Order::getInversionistaId).distinct().forEach(invId -> {
             try {
-                var inv = inversionistas.obtenerPorId(invId);
+                var inv = inversionistasInternal.obtenerPorId(invId);
                 if (inv != null) {
                     String nombre = ((inv.getNombre() != null ? inv.getNombre() : "") + " " +
                             (inv.getApellido()!= null ? inv.getApellido(): "")).trim();
                     cacheInv.put(invId, new String[]{ nombre, inv.getCorreo() });
                 }
-            } catch (Exception ignored) {
-
-            }
+            } catch (Exception ignored) { }
         });
 
         return list.stream().map(e -> mapOutForComisionista(e, cacheInv)).toList();
@@ -156,7 +165,7 @@ public class OrdenServiceImpl implements IOrdenService {
 
         Map<Long, String[]> cacheInv = new HashMap<>();
         try {
-            var inv = inversionistas.obtenerPorId(inversionistaId);
+            var inv = inversionistasInternal.obtenerPorId(inversionistaId);
             if (inv != null) {
                 String nombre = ((inv.getNombre() != null ? inv.getNombre() : "") + " " +
                         (inv.getApellido()!= null ? inv.getApellido(): "")).trim();
@@ -252,19 +261,15 @@ public class OrdenServiceImpl implements IOrdenService {
         List<Order> list;
 
         if (start != null && end != null) {
-
             list = repo.findByComisionistaIdAndCreadoEnBetweenAndStatusNotIgnoreCaseOrderByCreadoEnDesc(
                     comisionistaId, start, end, EXCLUIR_STATUS);
         } else if (start != null) {
-
             list = repo.findByComisionistaIdAndCreadoEnGreaterThanEqualAndStatusNotIgnoreCaseOrderByCreadoEnDesc(
                     comisionistaId, start, EXCLUIR_STATUS);
         } else if (end != null) {
-
             list = repo.findByComisionistaIdAndCreadoEnLessThanEqualAndStatusNotIgnoreCaseOrderByCreadoEnDesc(
                     comisionistaId, end, EXCLUIR_STATUS);
         } else {
-
             list = repo.findByComisionistaIdOrderByCreadoEnDesc(comisionistaId)
                     .stream()
                     .filter(o -> !EXCLUIR_STATUS.equalsIgnoreCase(o.getStatus()))
@@ -282,18 +287,6 @@ public class OrdenServiceImpl implements IOrdenService {
         return dto;
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public List<PositionDTO> listarMisPosiciones() {
-
-        AlpacaAccountDTO acc = inversionistas.miAlpaca();
-        if (acc == null || acc.getAlpacaId() == null || acc.getAlpacaId().isBlank()) {
-            throw new NotFoundException("No se encontró tu cuenta Alpaca.");
-        }
-
-        return alpaca.listarPosiciones(acc.getAlpacaId());
-    }
-
     private static Instant parseStartOfDayUtc(String yyyyMmDd) {
         if (yyyyMmDd == null || yyyyMmDd.isBlank()) return null;
         try {
@@ -303,6 +296,29 @@ public class OrdenServiceImpl implements IOrdenService {
             return null;
         }
     }
+
+    @Override
+    public List<PositionDTO> listarMisPosiciones() {
+            try {
+            final String url = "http://api-gateway:8080/api/inversionistas/mi/alpaca";
+
+            AlpacaAccountDTO miAlpaca = restTemplate.getForObject(url, AlpacaAccountDTO.class);
+            String alpacaId = (miAlpaca != null ? miAlpaca.getAlpacaId() : null);
+
+            if (alpacaId == null || alpacaId.isBlank()) {
+                throw new BadRequestException("No se encontró una cuenta Alpaca asociada.");
+            }
+
+            List<PositionDTO> posiciones = alpaca.listarPosiciones(alpacaId);
+            return (posiciones != null ? posiciones : List.of());
+
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Error consultando tus posiciones Alpaca: " + e.getMessage());
+        }
+    }
+
 
     private static Instant parseEndOfDayUtc(String yyyyMmDd) {
         if (yyyyMmDd == null || yyyyMmDd.isBlank()) return null;
@@ -337,14 +353,14 @@ public class OrdenServiceImpl implements IOrdenService {
 
     private String obtenerAlpacaIdDeInversionista(Long inversionistaId) {
         try {
-            InversionistaDTO inv = inversionistas.obtenerPorId(inversionistaId);
+            InversionistaDTO inv = inversionistasInternal.obtenerPorId(inversionistaId);
             if (inv != null && inv.getAlpacaAccountId() != null && !inv.getAlpacaAccountId().isBlank()) {
                 return inv.getAlpacaAccountId();
             }
         } catch (feign.FeignException ignored) { }
 
         try {
-            AlpacaAccountDTO a = inversionistas.alpacaPorInversionistaId(inversionistaId);
+            AlpacaAccountDTO a = inversionistasInternal.alpacaPorInversionistaId(inversionistaId);
             if (a != null && a.getAlpacaId() != null && !a.getAlpacaId().isBlank()) {
                 return a.getAlpacaId();
             }
@@ -423,7 +439,7 @@ public class OrdenServiceImpl implements IOrdenService {
             String alpacaAccountId = null;
             try {
                 alpacaAccountId = obtenerAlpacaIdDeInversionista(o.getInversionistaId());
-            } catch (Exception ignored) { /* si falla, sigo con la siguiente */ }
+            } catch (Exception ignored) { }
             if (alpacaAccountId == null || alpacaAccountId.isBlank()) continue;
 
             OrderDTO alp = alpaca.obtenerOrden(alpacaAccountId, o.getAlpacaOrderId());
@@ -432,7 +448,6 @@ public class OrdenServiceImpl implements IOrdenService {
             String nuevoEstado = (alp.getStatus() == null ? null : alp.getStatus().toUpperCase(Locale.ROOT));
             if (nuevoEstado != null && !nuevoEstado.equalsIgnoreCase(o.getStatus())) {
                 o.setStatus(nuevoEstado);
-
                 repo.save(o);
                 actualizadas++;
             }

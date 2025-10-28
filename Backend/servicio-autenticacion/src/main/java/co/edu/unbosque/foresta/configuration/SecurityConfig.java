@@ -43,13 +43,18 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/login",
                                 "/api/auth/refresh",
                                 "/api/auth/logout",
                                 "/api/auth/recuperar-password",
+                                "/api/auth/recuperar-password/**",
                                 "/api/auth/restablecer-password",
-                                "/api/auth/registrar-inversionista").permitAll()
+                                "/api/auth/restablecer-password/**",
+                                "/api/auth/registrar-inversionista"
+                        ).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/auth/registrar-comisionista").hasRole("ADMIN")
 
@@ -57,8 +62,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
+
 
 
 }

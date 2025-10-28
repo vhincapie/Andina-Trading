@@ -1,0 +1,192 @@
+services:
+  # === API GATEWAY ===
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - servicio-autenticacion
+      - servicio-catalogos
+      - servicio-inversionista
+      - servicio-comisionista
+      - servicio-cuentas
+      - servicio-ordenes
+    networks: [andina]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # === SERVICIO AUTENTICACIÓN ===
+  servicio-autenticacion:
+    build: ./servicio-autenticacion
+    container_name: servicio-autenticacion
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME_AUTH=${DB_NAME_AUTH}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "8081"
+    networks: [andina]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # === SERVICIO CATÁLOGOS ===
+  servicio-catalogos:
+    build: ./servicio-catalogos
+    container_name: servicio-catalogos
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME_CATALOGOS=${DB_NAME_CATALOGOS}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    expose:
+      - "8082"
+    networks: [andina]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # === SERVICIO INVERSIONISTA ===
+  servicio-inversionista:
+    build: ./servicio-inversionista
+    container_name: servicio-inversionista
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME_INVERSIONISTAS=${DB_NAME_INVERSIONISTAS}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - ALPACA_BROKER_API_KEY=${ALPACA_BROKER_API_KEY}
+      - ALPACA_BROKER_API_SECRET=${ALPACA_BROKER_API_SECRET}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "8083"
+    networks: [andina]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # === SERVICIO COMISIONISTA ===
+  servicio-comisionista:
+    build: ./servicio-comisionista
+    container_name: servicio-comisionista
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME_COMISIONISTAS=${DB_NAME_COMISIONISTAS}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - AUTH_BASE_URL=http://servicio-autenticacion:8081
+      - CATALOGOS_BASE_URL=http://servicio-catalogos:8082
+    expose:
+      - "8084"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # === SERVICIO CONTRATOS ===
+  servicio-contratos:
+    build: ./servicio-contratos
+    container_name: servicio-contratos
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME_CONTRATOS=${DB_NAME_CONTRATOS}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    expose:
+      - "8085"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # === SERVICIO CUENTAS ===
+  servicio-cuentas:
+    build: ./servicio-cuentas
+    container_name: servicio-cuentas
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME_CUENTAS: ${DB_NAME_CUENTAS}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      JWT_SECRET: ${JWT_SECRET}
+      ALPACA_BROKER_API_KEY: ${ALPACA_BROKER_API_KEY}
+      ALPACA_BROKER_API_SECRET: ${ALPACA_BROKER_API_SECRET}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "8086"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - servicio-inversionista
+    networks:
+      - andina
+    restart: unless-stopped
+
+  # === SERVICIO ORDENES ===
+  servicio-ordenes:
+    build: ./servicio-ordenes
+    container_name: servicio-ordenes
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME_ORDENES=${DB_NAME_ORDENES}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - ALPACA_BROKER_API_KEY=${ALPACA_BROKER_API_KEY}
+      - ALPACA_BROKER_API_SECRET=${ALPACA_BROKER_API_SECRET}
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "8087"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+# === RED COMPARTIDA ===
+networks:
+  andina:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"

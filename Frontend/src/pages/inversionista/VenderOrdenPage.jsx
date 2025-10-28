@@ -8,12 +8,25 @@ const fmtQty = (q) => {
   return Number.isFinite(n) ? n.toFixed(6) : q;
 };
 
+const normalizePosition = (p = {}) => {
+  const symbol = p.symbol ?? p.ticker ?? "";
+  const qty = Number(p.qty ?? p.quantity ?? 0);
+  const avgEntryPriceRaw =
+    p.avgEntryPrice ?? p.avg_entry_price ?? p.averagePrice;
+  const marketValueRaw = p.marketValue ?? p.market_value ?? p.marketVal;
+  return {
+    symbol,
+    qty,
+    avgEntryPrice: avgEntryPriceRaw != null ? Number(avgEntryPriceRaw) : null,
+    marketValue: marketValueRaw != null ? Number(marketValueRaw) : null,
+  };
+};
+
 export default function VenderOrdenPage() {
   const [pos, setPos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
-
   const [selected, setSelected] = useState(null);
   const [qty, setQty] = useState("");
   const [type, setType] = useState("market");
@@ -35,7 +48,8 @@ export default function VenderOrdenPage() {
     setLoading(true);
     try {
       const data = await getMisPosiciones();
-      setPos(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data.map(normalizePosition) : [];
+      setPos(list);
     } catch (e) {
       setErr(e?.message || "No se pudieron cargar tus posiciones.");
     } finally {
@@ -70,59 +84,57 @@ export default function VenderOrdenPage() {
   };
 
   const onSell = async (e) => {
-  e.preventDefault();
-  setErr("");
-  setOk("");
+    e.preventDefault();
+    setErr("");
+    setOk("");
 
-  if (!selected?.symbol) {
-    setErr("Selecciona primero una posición.");
-    return;
-  }
+    if (!selected?.symbol) {
+      setErr("Selecciona primero una posición.");
+      return;
+    }
 
-  const maxQty = Number(selected?.qty || 0);
-  const q = Number(qty);
-  if (!Number.isFinite(q) || q <= 0) {
-    setErr("Cantidad inválida.");
-    return;
-  }
-  if (q > maxQty) {
-    setErr(`No puedes vender más de ${fmtQty(selected.qty)} ${selected.symbol}.`);
-    return;
-  }
-  if (needsLimit && !limitPrice) {
-    setErr("Debes ingresar 'limit price'.");
-    return;
-  }
-  if (needsStop && !stopPrice) {
-    setErr("Debes ingresar 'stop price'.");
-    return;
-  }
+    const maxQty = Number(selected?.qty || 0);
+    const q = Number(qty);
+    if (!Number.isFinite(q) || q <= 0) {
+      setErr("Cantidad inválida.");
+      return;
+    }
+    if (q > maxQty) {
+      setErr(
+        `No puedes vender más de ${fmtQty(selected.qty)} ${selected.symbol}.`
+      );
+      return;
+    }
+    if (needsLimit && !limitPrice) {
+      setErr("Debes ingresar 'limit price'.");
+      return;
+    }
+    if (needsStop && !stopPrice) {
+      setErr("Debes ingresar 'stop price'.");
+      return;
+    }
 
-  const payload = {
-    symbol: selected.symbol,
-    qty: String(q),
-    side: "sell",
-    type: type,
-    time_in_force: (timeInForce || "day").toLowerCase(),
-    ...(needsLimit ? { limit_price: String(limitPrice) } : {}),
-    ...(needsStop ? { stop_price: String(stopPrice) } : {}),
+    const payload = {
+      symbol: selected.symbol,
+      qty: String(q),
+      side: "sell",
+      type: type,
+      time_in_force: (timeInForce || "day").toLowerCase(),
+      ...(needsLimit ? { limit_price: String(limitPrice) } : {}),
+      ...(needsStop ? { stop_price: String(stopPrice) } : {}),
+    };
+
+    try {
+      await crearOrden(payload);
+      setOk(`Orden de venta enviada (símbolo ${selected.symbol}).`);
+      setSelected(null);
+      setQty("");
+      setLimitPrice("");
+      setStopPrice("");
+    } catch (e) {
+      setErr(e?.message || "No se pudo crear la orden de venta.");
+    }
   };
-
-  console.log("Payload venta ->", payload);
-
-  try {
-    await crearOrden(payload);
-    setOk(`Orden de venta enviada (símbolo ${selected.symbol}).`);
-    setSelected(null);
-    setQty("");
-    setLimitPrice("");
-    setStopPrice("");
-
-  } catch (e) {
-    setErr(e?.message || "No se pudo crear la orden de venta.");
-  }
-};
-
 
   return (
     <div className="max-w-5xl mx-auto space-y-5">
@@ -131,13 +143,14 @@ export default function VenderOrdenPage() {
       <ErrorAlert message={err} onClose={() => setErr("")} />
       <SuccessAlert message={ok} onClose={() => setOk("")} />
 
-      {/* Lista de posiciones */}
       <section className="bg-white border rounded p-4">
         <h3 className="font-semibold mb-2">Tus posiciones</h3>
         {loading ? (
           <div className="text-sm text-gray-600">Cargando…</div>
         ) : pos.length === 0 ? (
-          <div className="text-sm text-gray-600">No tienes posiciones abiertas.</div>
+          <div className="text-sm text-gray-600">
+            No tienes posiciones abiertas.
+          </div>
         ) : (
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50">
@@ -155,10 +168,14 @@ export default function VenderOrdenPage() {
                   <td className="p-2 font-mono">{p.symbol}</td>
                   <td className="p-2 text-right">{fmtQty(p.qty)}</td>
                   <td className="p-2 text-right">
-                    {p.avgEntryPrice != null ? Number(p.avgEntryPrice).toFixed(2) : "—"}
+                    {p.avgEntryPrice != null
+                      ? Number(p.avgEntryPrice).toFixed(2)
+                      : "—"}
                   </td>
                   <td className="p-2 text-right">
-                    {p.marketValue != null ? Number(p.marketValue).toFixed(2) : "—"}
+                    {p.marketValue != null
+                      ? Number(p.marketValue).toFixed(2)
+                      : "—"}
                   </td>
                   <td className="p-2 text-right">
                     <button
@@ -175,15 +192,14 @@ export default function VenderOrdenPage() {
         )}
       </section>
 
-      {/* Formulario venta */}
       <section className="bg-white border rounded p-4">
         <h3 className="font-semibold mb-2">Nueva orden de venta</h3>
 
         {selected ? (
           <div className="mb-3 text-sm">
-            <span className="font-mono font-semibold">{selected.symbol}</span>{" "}
-            — Qty disponible:{" "}
-            <strong>{fmtQty(selected.qty)}</strong> — Precio prom:{" "}
+            <span className="font-mono font-semibold">{selected.symbol}</span> —
+            Qty disponible: <strong>{fmtQty(selected.qty)}</strong> — Precio
+            prom:{" "}
             <strong>
               {selected.avgEntryPrice != null
                 ? Number(selected.avgEntryPrice).toFixed(2)

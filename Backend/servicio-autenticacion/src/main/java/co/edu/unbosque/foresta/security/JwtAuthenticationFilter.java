@@ -53,32 +53,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             List<String> roles;
             if (rolesObj instanceof List<?> rawList) {
-                roles = rawList.stream()
-                        .filter(Objects::nonNull)
-                        .map(String::valueOf)
-                        .toList();
+                roles = rawList.stream().filter(Objects::nonNull).map(String::valueOf).toList();
             } else if (rolesObj instanceof String s) {
-                roles = Arrays.stream(s.split("[,\\s]+"))
-                        .filter(t -> !t.isBlank())
-                        .toList();
+                roles = Arrays.stream(s.split("[,\\s]+")).filter(t -> !t.isBlank()).toList();
             } else {
                 roles = List.of();
             }
 
-            Collection<? extends GrantedAuthority> authorities = roles.stream()
+            var authorities = roles.stream()
                     .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r.toUpperCase())
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(username, null, authorities);
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            filterChain.doFilter(request, response);
 
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"message\":\"JWT inválido o expirado\",\"status\":401}");
         }
-
-        filterChain.doFilter(request, response);
     }
 }

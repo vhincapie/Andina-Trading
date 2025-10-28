@@ -2,7 +2,7 @@ package co.edu.unbosque.foresta.service.implementations;
 
 import co.edu.unbosque.foresta.integration.AlpacaTradingClient;
 import co.edu.unbosque.foresta.integration.DTO.AlpacaAccountDTO;
-import co.edu.unbosque.foresta.integration.InversionistasClient;
+import co.edu.unbosque.foresta.integration.InversionistasInternalClient;
 import co.edu.unbosque.foresta.model.DTO.OrderDTO;
 import co.edu.unbosque.foresta.model.entity.Order;
 import co.edu.unbosque.foresta.repository.IOrderRepository;
@@ -12,27 +12,21 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
 
 @Service
 public class OrderSyncService {
-
-    private static final Logger log = LoggerFactory.getLogger(OrderSyncService.class);
-
-    private static final Set<String> TERMINALES = Set.of(
-            "FILLED","CANCELED","REJECTED","EXPIRED","DONE_FOR_DAY"
-    );
-
     private final IOrderRepository orderRepository;
     private final AlpacaTradingClient alpaca;
-    private final InversionistasClient inversionistas;
+    private final InversionistasInternalClient inversionistasInternal;
 
     public OrderSyncService(IOrderRepository orderRepository,
                             AlpacaTradingClient alpaca,
-                            InversionistasClient inversionistas) {
+                            InversionistasInternalClient inversionistasInternal) {
         this.orderRepository = orderRepository;
         this.alpaca = alpaca;
-        this.inversionistas = inversionistas;
+        this.inversionistasInternal = inversionistasInternal;
     }
 
     private static String normalize(String s) {
@@ -42,10 +36,8 @@ public class OrderSyncService {
     @Scheduled(fixedDelay = 20_000, initialDelay = 10_000)
     @Transactional
     public void sincronizarEstadosOrdenes() {
-        log.info("[Sync] Tick scheduler (automático)");
         List<Order> pendientes = orderRepository.findOrdersToSync();
         if (pendientes.isEmpty()) {
-            log.debug("[Sync] No hay órdenes pendientes.");
             return;
         }
         int cambios = 0;
@@ -58,7 +50,6 @@ public class OrderSyncService {
 
                 String alpacaAccountId = obtenerAlpacaIdDeInversionista(o.getInversionistaId());
                 if (alpacaAccountId == null || alpacaAccountId.isBlank()) {
-                    log.debug("[Sync] Orden {} sin cuenta Alpaca", o.getId());
                     continue;
                 }
 
@@ -70,22 +61,18 @@ public class OrderSyncService {
                     o.setStatus(nuevo);
                     orderRepository.save(o);
                     cambios++;
-                    log.info("[Sync] Orden {}: {} -> {}", o.getId(), actual, nuevo);
                 }
             } catch (Exception e) {
-                log.warn("[Sync] Error con orden {}: {}", o.getId(), e.getMessage());
             }
         }
         if (cambios > 0) {
-            log.info("[Sync] Órdenes actualizadas: {}", cambios);
         } else {
-            log.debug("[Sync] Sin cambios.");
         }
     }
 
     private String obtenerAlpacaIdDeInversionista(Long inversionistaId) {
         try {
-            AlpacaAccountDTO dto = inversionistas.alpacaPorInversionistaId(inversionistaId);
+            AlpacaAccountDTO dto = inversionistasInternal.alpacaPorInversionistaId(inversionistaId);
             if (dto != null && dto.getAlpacaId() != null && !dto.getAlpacaId().isBlank()) {
                 return dto.getAlpacaId();
             }
