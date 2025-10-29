@@ -34,11 +34,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex->ex.authenticationEntryPoint(restEntry()).accessDeniedHandler(restDenied()))
                 .authorizeHttpRequests(auth->auth
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/inversionistas/registrar").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/inversionistas/perfil").authenticated()
-                        .requestMatchers(HttpMethod.PUT,"/api/inversionistas/actualizar").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/inversionistas/mi/alpaca").hasRole("INVERSIONISTA")
-                        .requestMatchers(HttpMethod.GET,"/api/inversionistas/{id}").hasAnyRole("INVERSIONISTA","COMISIONISTA","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/marketdata/candles").hasRole("INVERSIONISTA")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);

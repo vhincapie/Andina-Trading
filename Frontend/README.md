@@ -17,5 +17,6 @@ If you are developing a production application, we recommend using TypeScript wi
 
 Dependencias: npm i react-router-dom jwt-decode axios -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
-
-
+npm remove @tradingview/lightweight-charts tradingview-lightweight-charts
+npm i lightweight-charts@^4
+rm -rf node_modules/.vite

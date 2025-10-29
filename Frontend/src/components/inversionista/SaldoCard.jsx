@@ -3,7 +3,7 @@ import { obtenerSaldo } from "../../api/cuentasService";
 import ErrorAlert from "../alerts/ErrorAlert";
 import SuccessAlert from "../alerts/SuccessAlert";
 
-export default function SaldoCard() {
+export default function SaldoCard({ onlyBuyingPower = false }) {
   const [saldo, setSaldo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [aviso, setAviso] = useState("");
@@ -41,17 +41,33 @@ export default function SaldoCard() {
     return () => clearTimeout(t);
   }, [error, aviso]);
 
+  const buyingPower = saldo?.buying_power ?? saldo?.buyingPower ?? "0";
+
+  if (onlyBuyingPower) {
+    return (
+      <div className="bg-white border rounded p-4 space-y-3">
+        <h3 className="font-semibold text-lg">Buying Power</h3>
+        <ErrorAlert message={error} onClose={() => setError("")} />
+        <SuccessAlert message={aviso} onClose={() => setAviso("")} />
+        {loading ? (
+          <p className="text-gray-600">Cargando...</p>
+        ) : (
+          <div className="border rounded p-4">
+            <div className="text-2xl font-semibold">${buyingPower}</div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const equity = saldo?.equity ?? saldo?.Equity ?? "0";
   const cash = saldo?.cash ?? saldo?.Cash ?? "0";
-  const buyingPower = saldo?.buying_power ?? saldo?.buyingPower ?? "0";
 
   return (
     <div className="bg-white border rounded p-4 space-y-3">
       <h3 className="font-semibold text-lg">Mi saldo</h3>
-
       <ErrorAlert message={error} onClose={() => setError("")} />
       <SuccessAlert message={aviso} onClose={() => setAviso("")} />
-
       {loading ? (
         <p className="text-gray-600">Cargando...</p>
       ) : (

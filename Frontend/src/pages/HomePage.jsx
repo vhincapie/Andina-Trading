@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getMe } from "../api/authService";
 import SaldoCard from "../components/inversionista/SaldoCard";
 import { useAuth } from "../context/AuthContext";
+import MarketChartWidget from "../components/market/MarketChartWidget";
 
 export default function HomePage() {
   const [me, setMe] = useState(null);
@@ -27,7 +28,8 @@ export default function HomePage() {
     <main>
       <h2 className="text-2xl font-semibold mb-4">Inicio</h2>
       {error && <p className="text-red-600">{error}</p>}
-      <div className="grid gap-4 md:grid-cols-2">
+
+      <div className="grid gap-4 md:grid-cols-2 mb-4">
         <div className="bg-white border rounded p-4">
           <h3 className="font-semibold mb-2">Mi perfil</h3>
           {!me ? (
@@ -43,8 +45,14 @@ export default function HomePage() {
             </>
           )}
         </div>
-        {isInvestor && <SaldoCard />}
       </div>
+
+      {isInvestor && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <SaldoCard onlyBuyingPower />
+          <MarketChartWidget symbols="AAPL,MSFT" timeframe="1Day" />{" "}
+        </div>
+      )}
     </main>
   );
 }
