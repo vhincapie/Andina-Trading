@@ -30,5 +30,6 @@ CREATE TABLE IF NOT EXISTS orders (
 
     approved_by BIGINT NULL,
     approved_at TIMESTAMP NULL,
+    filled_notified_at TIMESTAMP NULL,
     reject_reason VARCHAR(255) NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

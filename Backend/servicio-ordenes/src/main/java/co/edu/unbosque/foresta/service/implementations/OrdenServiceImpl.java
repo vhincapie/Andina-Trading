@@ -2,13 +2,10 @@ package co.edu.unbosque.foresta.service.implementations;
 
 import co.edu.unbosque.foresta.exceptions.exceptions.BadRequestException;
 import co.edu.unbosque.foresta.exceptions.exceptions.NotFoundException;
-import co.edu.unbosque.foresta.integration.AlpacaTradingClient;
-import co.edu.unbosque.foresta.integration.ContratosClient;
+import co.edu.unbosque.foresta.integration.*;
 import co.edu.unbosque.foresta.integration.DTO.AlpacaAccountDTO;
 import co.edu.unbosque.foresta.integration.DTO.ContratoActivoDTO;
 import co.edu.unbosque.foresta.integration.DTO.InversionistaDTO;
-import co.edu.unbosque.foresta.integration.InversionistasAuthClient;
-import co.edu.unbosque.foresta.integration.InversionistasInternalClient;
 import co.edu.unbosque.foresta.model.DTO.*;
 import co.edu.unbosque.foresta.model.entity.Order;
 import co.edu.unbosque.foresta.repository.IOrderRepository;
@@ -39,6 +36,8 @@ public class OrdenServiceImpl implements IOrdenService {
     private final ContratosClient contratos;
     private final InversionistasInternalClient inversionistasInternal;
     private final InversionistasAuthClient inversionistasAuth;
+
+    private final NotificacionesClient notificacionesClient;
     private final AlpacaTradingClient alpaca;
     private final IPrecioService precios;
     private final ISaldoService saldoService;
@@ -56,7 +55,7 @@ public class OrdenServiceImpl implements IOrdenService {
                             IPrecioService precios,
                             ISaldoService saldoService,
                             ModelMapper mm,
-                            @Qualifier("internalRestTemplate") RestTemplate restTemplate) {
+                            @Qualifier("internalRestTemplate") RestTemplate restTemplate, NotificacionesClient notificacionesClient) {
         this.repo = repo;
         this.contratos = contratos;
         this.inversionistasInternal = inversionistasInternal;
@@ -66,6 +65,7 @@ public class OrdenServiceImpl implements IOrdenService {
         this.saldoService = saldoService;
         this.mm = mm;
         this.restTemplate = restTemplate;
+        this.notificacionesClient = notificacionesClient;
     }
 
     @Transactional
@@ -226,7 +226,9 @@ public class OrdenServiceImpl implements IOrdenService {
         e.setApprovedAt(Instant.now());
         e.setRejectReason(null);
 
-        return mapOut(repo.save(e));
+        Order guardada = repo.save(e);
+        notificarSiFilled(guardada);
+        return mapOut(guardada);
     }
 
     @Transactional
@@ -453,6 +455,43 @@ public class OrdenServiceImpl implements IOrdenService {
             }
         }
         return actualizadas;
+    }
+
+    private void notificarSiFilled(Order o) {
+        if (o == null) return;
+        if (!"FILLED".equalsIgnoreCase(o.getStatus())) return;
+        if (o.getFilledNotifiedAt() != null) return;
+
+        String nombre = null, correo = null;
+        try {
+            var inv = inversionistasInternal.obtenerPorId(o.getInversionistaId());
+            if (inv != null) {
+                nombre = ((inv.getNombre() != null ? inv.getNombre() : "") + " " +
+                        (inv.getApellido() != null ? inv.getApellido() : "")).trim();
+                correo = inv.getCorreo();
+            }
+        } catch (Exception ignored) {}
+
+        if (correo == null || correo.isBlank()) return;
+
+        co.edu.unbosque.foresta.integration.DTO.OrdenFilledEmailRequest req =
+                new co.edu.unbosque.foresta.integration.DTO.OrdenFilledEmailRequest();
+        req.setOrderDbId(o.getId());
+        req.setSymbol(o.getSymbol());
+        req.setSide(o.getSide());
+        req.setQty(o.getQty() != null ? o.getQty().toPlainString() : null);
+        req.setUnitPrice(o.getUnitPrice());
+        req.setNetAmount(o.getNetAmount());
+        req.setMoneda(o.getMoneda());
+        req.setFilledAt(o.getActualizadoEn());
+        req.setInversionistaNombre(nombre);
+        req.setInversionistaCorreo(correo);
+
+        try {
+            notificacionesClient.notificarOrdenFilled(req);
+            o.setFilledNotifiedAt(Instant.now());
+            repo.save(o);
+        } catch (Exception ignored) { }
     }
 
     private boolean isActive(String st) {
