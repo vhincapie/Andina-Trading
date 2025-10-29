@@ -56,18 +56,15 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.CONFLICT, "Conflicto de datos", r);
     }
 
-    // 🔧 Mantén este genérico al final
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BaseResponse> gen(Exception ex, HttpServletRequest r) {
         return body(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno", r);
     }
 
-    // ✅ Corregido: handler Alpaca consistente con tu payload esperado
     @ExceptionHandler(AlpacaApiException.class)
     public ResponseEntity<Map<String, Object>> handleAlpaca(AlpacaApiException ex, HttpServletRequest r) {
         String message = ex.getMessage();
 
-        // Si la causa original trae status y body (por ejemplo 422 de Alpaca), lo exponemos
         Throwable cause = ex.getCause();
         if (cause instanceof HttpClientErrorException httpEx) {
             String body = httpEx.getResponseBodyAsString();
@@ -79,7 +76,6 @@ public class GlobalExceptionHandler {
             }
         }
 
-        // 502 Bad Gateway para fallos del broker externo
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(error("alpaca_error", message, r.getRequestURI()));
     }
@@ -92,7 +88,6 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.BAD_REQUEST, "Error al llamar servicio externo (" + s + ")", r);
     }
 
-    // 👇 Helper faltante (ahora sí existe)
     private Map<String, Object> error(String code, String message, String path) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("code", code);

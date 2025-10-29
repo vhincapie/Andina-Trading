@@ -15,6 +15,7 @@ services:
       - servicio-comisionista
       - servicio-cuentas
       - servicio-ordenes
+      - servicio-portafolio
     networks: [andina]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -182,6 +183,26 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+
+  # === SERVICIO PORTAFOLIO  ===
+  servicio-portafolio:
+    build: ./servicio-portafolio
+    container_name: servicio-portafolio
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - APCA_API_KEY_ID_MARKET=${APCA_API_KEY_ID_MARKET}
+      - APCA_API_SECRET_KEY_MARKET=${APCA_API_SECRET_KEY_MARKET}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "8088"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
 
 # === RED COMPARTIDA ===
 networks:
