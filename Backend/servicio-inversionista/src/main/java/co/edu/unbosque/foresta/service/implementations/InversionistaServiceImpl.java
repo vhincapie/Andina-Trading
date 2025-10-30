@@ -21,6 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 
 @Service
 public class InversionistaServiceImpl implements IInversionistaService {
@@ -31,19 +35,22 @@ public class InversionistaServiceImpl implements IInversionistaService {
     private final CatalogosClient catClient;
     private final IAlpacaService alpacaService;
     private final ModelMapper mm;
+    private final AuditSender auditSender;
 
     public InversionistaServiceImpl(IInversionistaRepository repo,
                                     IAlpacaAccountRepository alpacaRepo,
                                     AuthClient authClient,
                                     CatalogosClient catClient,
                                     IAlpacaService alpacaService,
-                                    ModelMapper mm) {
+                                    ModelMapper mm,
+                                    AuditSender auditSender) {
         this.repo = repo;
         this.alpacaRepo = alpacaRepo;
         this.authClient = authClient;
         this.catClient = catClient;
         this.alpacaService = alpacaService;
         this.mm = mm;
+        this.auditSender = auditSender;
     }
 
     @Override
@@ -54,6 +61,12 @@ public class InversionistaServiceImpl implements IInversionistaService {
         Long usuarioId = registrarEnAuthYObtenerUsuarioId(n);
         Inversionista guardado = repo.save(construirEntidadRegistro(usuarioId, n));
         crearYAsociarCuentaAlpaca(guardado, n);
+        auditSender.log("", new AuditLogRequest(
+                "INV_REGISTER",
+                "/api/inversionistas/registrar",
+                "Registro inversionista",
+                Map.of("usuarioId", usuarioId, "inversionistaId", guardado.getId(), "correo", n.getCorreo())
+        ));
         return toDTO(guardado);
     }
 
@@ -65,20 +78,41 @@ public class InversionistaServiceImpl implements IInversionistaService {
         Inversionista inv = cargarPorCorreo(correoAutenticado);
         validarUbicacion(n.getPaisId(), n.getCiudadId());
         aplicarCambios(inv, n);
-        return toDTO(repo.save(inv));
+        Inversionista guardado = repo.save(inv);
+        auditSender.log("", new AuditLogRequest(
+                "INV_UPDATE",
+                "/api/inversionistas/mi-perfil",
+                "Actualizar perfil inversionista",
+                Map.of("inversionistaId", guardado.getId(), "correo", correoAutenticado, "paisId", n.getPaisId(), "ciudadId", n.getCiudadId())
+        ));
+        return toDTO(guardado);
     }
 
     @Override
     @Transactional(readOnly = true)
     public InversionistaDTO obtenerMiPerfil(String correoAutenticado) {
-        return toDTO(cargarPorCorreo(correoAutenticado));
+        InversionistaDTO dto = toDTO(cargarPorCorreo(correoAutenticado));
+        auditSender.log("", new AuditLogRequest(
+                "INV_GET_ME",
+                "/api/inversionistas/mi-perfil",
+                "Obtener mi perfil",
+                Map.of("correo", correoAutenticado)
+        ));
+        return dto;
     }
 
     @Transactional(readOnly = true)
     @Override
     public InversionistaDTO obtenerPorId(Long id) {
         Inversionista c = repo.findById(id).orElseThrow(() -> new NotFoundException("Inversionista no encontrado"));
-        return mm.map(c, InversionistaDTO.class);
+        InversionistaDTO dto = mm.map(c, InversionistaDTO.class);
+        auditSender.log("", new AuditLogRequest(
+                "INV_GET_BY_ID",
+                "/api/inversionistas/" + id,
+                "Obtener inversionista por id",
+                Map.of("inversionistaId", id)
+        ));
+        return dto;
     }
 
     @Override
@@ -86,20 +120,53 @@ public class InversionistaServiceImpl implements IInversionistaService {
     public AlpacaAccountDTO miAlpaca(String correoAutenticado) {
         Inversionista inv = cargarPorCorreo(correoAutenticado);
         AlpacaAccount acc = alpacaRepo.findByInversionista(inv)
-                .orElseThrow(() -> new NotFoundException("Cuenta Alpaca no asociada"));
-        return new AlpacaAccountDTO(acc.getAlpacaId(), acc.getStatus(), acc.getCurrency());
+                .orElseThrow(() -> {
+                    auditSender.log("", new AuditLogRequest(
+                            "INV_ALPACA_NOT_FOUND",
+                            "/api/inversionistas/mi-alpaca",
+                            "Cuenta Alpaca no asociada",
+                            Map.of("correo", correoAutenticado, "inversionistaId", inv.getId())
+                    ));
+                    return new NotFoundException("Cuenta Alpaca no asociada");
+                });
+        AlpacaAccountDTO dto = new AlpacaAccountDTO(acc.getAlpacaId(), acc.getStatus(), acc.getCurrency());
+        auditSender.log("", new AuditLogRequest(
+                "INV_ALPACA_GET",
+                "/api/inversionistas/mi-alpaca",
+                "Obtener mi cuenta Alpaca",
+                Map.of("correo", correoAutenticado, "inversionistaId", inv.getId(), "alpacaId", acc.getAlpacaId(), "status", acc.getStatus())
+        ));
+        return dto;
     }
 
     private void crearYAsociarCuentaAlpaca(Inversionista inversionista, InversionistaRegistroRequestDTO n) {
         try {
             if (alpacaRepo.existsByInversionista(inversionista)) {
+                auditSender.log("", new AuditLogRequest(
+                        "INV_ALPACA_ALREADY_EXISTS",
+                        "/api/inversionistas/registrar",
+                        "Cuenta Alpaca ya asociada",
+                        Map.of("inversionistaId", inversionista.getId(), "correo", n.getCorreo())
+                ));
                 throw new ConflictException("El inversionista ya tiene cuenta Alpaca asociada");
             }
             CreateAccountRequestDTO alpReq = AlpacaMapper.fromInversionista(n, "127.0.0.1");
             AccountResponseDTO alpResp = alpacaService.createAccount(alpReq);
             AlpacaAccount cuenta = construirCuentaAlpaca(inversionista, alpResp);
             alpacaRepo.save(cuenta);
+            auditSender.log("", new AuditLogRequest(
+                    "INV_ALPACA_CREATE_AND_LINK",
+                    "/api/inversionistas/registrar",
+                    "Crear y asociar cuenta Alpaca",
+                    Map.of("inversionistaId", inversionista.getId(), "alpacaId", cuenta.getAlpacaId(), "status", cuenta.getStatus())
+            ));
         } catch (RuntimeException ex) {
+            auditSender.log("", new AuditLogRequest(
+                    "INV_ALPACA_CREATE_ERROR",
+                    "/api/inversionistas/registrar",
+                    "Error al crear cuenta Alpaca",
+                    Map.of("inversionistaId", inversionista.getId(), "mensaje", ex.getMessage())
+            ));
             throw new AlpacaApiException("No se pudo crear la cuenta en Alpaca: " + ex.getMessage());
         }
     }
@@ -132,10 +199,28 @@ public class InversionistaServiceImpl implements IInversionistaService {
             AuthSignupResponse signup = authClient.registrarInversionista(body);
             return signup.getUsuarioId();
         } catch (FeignException.Conflict e) {
+            auditSender.log("", new AuditLogRequest(
+                    "INV_REGISTER_CONFLICT",
+                    "/api/inversionistas/registrar",
+                    "Conflicto registrando inversionista en Auth",
+                    Map.of("correo", n.getCorreo())
+            ));
             throw new ConflictException("El correo ya está registrado en Autenticación");
         } catch (FeignException.BadRequest e) {
+            auditSender.log("", new AuditLogRequest(
+                    "INV_REGISTER_BAD_REQUEST",
+                    "/api/inversionistas/registrar",
+                    "Datos inválidos registrando en Auth",
+                    Map.of("correo", n.getCorreo())
+            ));
             throw new BadRequestException("Datos inválidos en Autenticación");
         } catch (FeignException e) {
+            auditSender.log("", new AuditLogRequest(
+                    "INV_REGISTER_AUTH_ERROR",
+                    "/api/inversionistas/registrar",
+                    "Error al consumir Auth",
+                    Map.of("correo", n.getCorreo(), "status", e.status())
+            ));
             throw new BadRequestException("Error registrando en Autenticación: " + e.status());
         }
     }

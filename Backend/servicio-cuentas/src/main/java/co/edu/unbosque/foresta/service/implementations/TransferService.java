@@ -20,6 +20,10 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 
 @Service
 public class TransferService implements ITransferService {
@@ -29,6 +33,7 @@ public class TransferService implements ITransferService {
     private final IAccountACHRepository achRepository;
     private final ITransferLogRepository transferLogRepository;
     private final ModelMapper mm;
+    private final AuditSender auditSender;
 
     @Value("${alpaca.broker.api.key}")
     private String apiKey;
@@ -43,22 +48,36 @@ public class TransferService implements ITransferService {
                            InversionistaClient inversionistaClient,
                            IAccountACHRepository achRepository,
                            ITransferLogRepository transferLogRepository,
-                           ModelMapper mm) {
+                           ModelMapper mm,
+                           AuditSender auditSender) {
         this.restTemplate = restTemplate;
         this.inversionistaClient = inversionistaClient;
         this.achRepository = achRepository;
         this.transferLogRepository = transferLogRepository;
         this.mm = mm;
+        this.auditSender = auditSender;
     }
 
     @Override
     public TransferResponseDTO crear(TransferCreateRequestDTO req) {
         TransferCreateRequestDTO dto = prepararSolicitud(req);
         MiAlpacaDTO mi = cargarCuentaAlpaca();
+        auditSender.log("", new AuditLogRequest(
+                "TRANSFER_CREATE_REQUEST",
+                "/api/transfers",
+                "Solicitar transferencia",
+                Map.of("alpacaAccountId", mi.getAlpacaId(), "amount", dto.getAmount())
+        ));
         bloquearUnaPorDia(mi.getAlpacaId());
         dto.setRelationshipId(obtenerRelacionACH(mi.getAlpacaId()));
         TransferResponseDTO resp = ejecutarTransferencia(construirUrlTransfer(mi.getAlpacaId()), dto);
         registrarTransferencia(mi.getAlpacaId(), resp, dto.getAmount());
+        auditSender.log("", new AuditLogRequest(
+                "TRANSFER_CREATE_SUCCESS",
+                "/api/transfers",
+                "Transferencia creada",
+                Map.of("alpacaAccountId", mi.getAlpacaId(), "transferId", resp.getId(), "status", resp.getStatus())
+        ));
         return resp;
     }
 
@@ -75,13 +94,27 @@ public class TransferService implements ITransferService {
 
     private void validarMonto(TransferCreateRequestDTO dto) {
         if (dto.getAmount() == null || dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            auditSender.log("", new AuditLogRequest(
+                    "TRANSFER_BAD_AMOUNT",
+                    "/api/transfers",
+                    "Monto inválido",
+                    Map.of()
+            ));
             throw new BadRequestException("amount debe ser mayor a 0");
         }
     }
 
     private MiAlpacaDTO cargarCuentaAlpaca() {
         MiAlpacaDTO mi = inversionistaClient.miAlpaca();
-        if (mi == null || mi.getAlpacaId() == null) throw new NotFoundException("No se encontró cuenta Alpaca asociada");
+        if (mi == null || mi.getAlpacaId() == null) {
+            auditSender.log("", new AuditLogRequest(
+                    "TRANSFER_INV_ALPACA_NOT_FOUND",
+                    "/api/transfers",
+                    "Cuenta Alpaca no asociada",
+                    Map.of()
+            ));
+            throw new NotFoundException("No se encontró cuenta Alpaca asociada");
+        }
         return mi;
     }
 
@@ -89,12 +122,28 @@ public class TransferService implements ITransferService {
         boolean existe = transferLogRepository.existsByAlpacaAccountIdAndCreatedAtBetween(
                 alpacaAccountId, TimeUtils.todayStartNY(), TimeUtils.todayEndNY()
         );
-        if (existe) throw new BadRequestException("Ya registraste una transferencia hoy. Intenta nuevamente mañana.");
+        if (existe) {
+            auditSender.log("", new AuditLogRequest(
+                    "TRANSFER_LIMIT_PER_DAY",
+                    "/api/transfers",
+                    "Transferencia ya registrada hoy",
+                    Map.of("alpacaAccountId", alpacaAccountId)
+            ));
+            throw new BadRequestException("Ya registraste una transferencia hoy. Intenta nuevamente mañana.");
+        }
     }
 
     private String obtenerRelacionACH(String alpacaAccountId) {
         AccountACHRelationShip rel = achRepository.findFirstByAlpacaAccountIdOrderByCreatedAtDesc(alpacaAccountId)
-                .orElseThrow(() -> new NotFoundException("No se encontró relación ACH asociada"));
+                .orElseThrow(() -> {
+                    auditSender.log("", new AuditLogRequest(
+                            "TRANSFER_ACH_REL_NOT_FOUND",
+                            "/api/transfers",
+                            "Relación ACH no encontrada",
+                            Map.of("alpacaAccountId", alpacaAccountId)
+                    ));
+                    return new NotFoundException("No se encontró relación ACH asociada");
+                });
         return rel.getAchId();
     }
 
@@ -107,10 +156,30 @@ public class TransferService implements ITransferService {
             ResponseEntity<TransferResponseDTO> resp = restTemplate.exchange(
                     url, HttpMethod.POST, new HttpEntity<>(dto, headersJson()), TransferResponseDTO.class
             );
-            if (resp.getBody() == null) throw new BadRequestException("Respuesta inválida desde Alpaca");
+            if (resp.getBody() == null) {
+                auditSender.log("", new AuditLogRequest(
+                        "TRANSFER_REMOTE_BAD_RESPONSE",
+                        "/integracion/alpaca/transfers",
+                        "Respuesta vacía desde Alpaca",
+                        Map.of("statusHttp", resp.getStatusCode().value())
+                ));
+                throw new BadRequestException("Respuesta inválida desde Alpaca");
+            }
+            auditSender.log("", new AuditLogRequest(
+                    "TRANSFER_REMOTE_OK",
+                    "/integracion/alpaca/transfers",
+                    "Transferencia remota creada",
+                    Map.of("statusHttp", resp.getStatusCode().value(), "transferId", resp.getBody().getId())
+            ));
             return resp.getBody();
         } catch (HttpClientErrorException e) {
             String body = e.getResponseBodyAsString();
+            auditSender.log("", new AuditLogRequest(
+                    "TRANSFER_REMOTE_HTTP_ERROR",
+                    "/integracion/alpaca/transfers",
+                    "Error HTTP creando transferencia",
+                    Map.of("statusHttp", e.getStatusCode().value(), "payload", body)
+            ));
             throw new BadRequestException("Error creando transferencia: " + e.getStatusCode().value() + " - " + body);
         }
     }
@@ -121,6 +190,12 @@ public class TransferService implements ITransferService {
         log.setAmount(amount);
         log.setCreatedAt(TimeUtils.nowNY());
         transferLogRepository.save(log);
+        auditSender.log("", new AuditLogRequest(
+                "TRANSFER_LOCAL_SAVED",
+                "/api/transfers",
+                "Guardar transferencia local",
+                Map.of("alpacaAccountId", alpacaAccountId, "transferId", resp.getId(), "amount", amount)
+        ));
     }
 
     private HttpHeaders headersJson() {

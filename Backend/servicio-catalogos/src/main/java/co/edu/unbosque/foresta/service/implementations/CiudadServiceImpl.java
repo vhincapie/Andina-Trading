@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 
 @Service
 public class CiudadServiceImpl implements ICiudadService {
@@ -22,11 +26,13 @@ public class CiudadServiceImpl implements ICiudadService {
     private final ICiudadRepository ciudadRepo;
     private final IPaisRepository paisRepo;
     private final ModelMapper mm;
+    private final AuditSender auditSender;
 
-    public CiudadServiceImpl(ICiudadRepository ciudadRepo, IPaisRepository paisRepo, ModelMapper mm) {
+    public CiudadServiceImpl(ICiudadRepository ciudadRepo, IPaisRepository paisRepo, ModelMapper mm, AuditSender auditSender) {
         this.ciudadRepo = ciudadRepo;
         this.paisRepo = paisRepo;
         this.mm = mm;
+        this.auditSender = auditSender;
     }
 
     @Override
@@ -34,23 +40,33 @@ public class CiudadServiceImpl implements ICiudadService {
     public CiudadDTO crear(CiudadDTO dto) {
         normalizar(dto);
         validarCamposObligatorios(dto);
-
         Pais pais = obtenerPais(dto.getPaisDTO().getId());
         validarDuplicado(dto.getNombre(), pais.getId());
-
         Ciudad entity = construirEntidad(dto, pais);
         Ciudad guardada = guardar(entity);
-
+        auditSender.log("", new AuditLogRequest(
+                "CAT_CITY_CREATE",
+                "/api/catalogos/ciudades",
+                "Crear ciudad",
+                Map.of("ciudadId", guardada.getId(), "nombre", guardada.getNombre(), "paisId", pais.getId())
+        ));
         return aDTO(guardada);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CiudadDTO> listar() {
-        return ciudadRepo.findAll()
+        List<CiudadDTO> res = ciudadRepo.findAll()
                 .stream()
                 .map(this::aDTO)
                 .toList();
+        auditSender.log("", new AuditLogRequest(
+                "CAT_CITY_LIST",
+                "/api/catalogos/ciudades",
+                "Listar ciudades",
+                Map.of("total", res.size())
+        ));
+        return res;
     }
 
     @Override
@@ -58,6 +74,12 @@ public class CiudadServiceImpl implements ICiudadService {
     public CiudadDTO obtener(Long id) {
         Ciudad c = ciudadRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ciudad no encontrada: " + id));
+        auditSender.log("", new AuditLogRequest(
+                "CAT_CITY_GET",
+                "/api/catalogos/ciudades/" + id,
+                "Obtener ciudad",
+                Map.of("ciudadId", id)
+        ));
         return aDTO(c);
     }
 

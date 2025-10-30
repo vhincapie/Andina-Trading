@@ -16,6 +16,8 @@ services:
       - servicio-cuentas
       - servicio-ordenes
       - servicio-portafolio
+      - servicio-notificaciones
+      - servicio-auditoria
     networks: [andina]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -203,6 +205,49 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
+  # === SERVICIO NOTIFICACIONES ===
+  servicio-notificaciones:
+    build: ./servicio-notificaciones
+    container_name: servicio-notificaciones
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM=${MAIL_FROM:-no-reply@andinatrading.com}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "8089"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # === SERVICIO AUDITORÍA ===
+  servicio-auditoria:
+    build: ./servicio-auditoria
+    container_name: servicio-auditoria
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME_AUDITORIA=${DB_NAME_AUDITORIA}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "9090"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
 
 # === RED COMPARTIDA ===
 networks:

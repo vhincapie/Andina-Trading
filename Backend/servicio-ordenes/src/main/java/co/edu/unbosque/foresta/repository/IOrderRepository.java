@@ -32,4 +32,6 @@ public interface IOrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByInversionistaIdAndSymbolOrderByCreadoEnDesc(Long inversionistaId, String symbol);
 
+    @Query("select o from Order o where upper(o.status) = 'FILLED' and o.filledNotifiedAt is null")
+    List<Order> findFilledWithoutNotification();
 }

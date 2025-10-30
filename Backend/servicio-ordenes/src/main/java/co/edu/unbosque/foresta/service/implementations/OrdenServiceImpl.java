@@ -1,14 +1,13 @@
 package co.edu.unbosque.foresta.service.implementations;
 
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 import co.edu.unbosque.foresta.exceptions.exceptions.BadRequestException;
 import co.edu.unbosque.foresta.exceptions.exceptions.NotFoundException;
-import co.edu.unbosque.foresta.integration.AlpacaTradingClient;
-import co.edu.unbosque.foresta.integration.ContratosClient;
+import co.edu.unbosque.foresta.integration.*;
 import co.edu.unbosque.foresta.integration.DTO.AlpacaAccountDTO;
 import co.edu.unbosque.foresta.integration.DTO.ContratoActivoDTO;
 import co.edu.unbosque.foresta.integration.DTO.InversionistaDTO;
-import co.edu.unbosque.foresta.integration.InversionistasAuthClient;
-import co.edu.unbosque.foresta.integration.InversionistasInternalClient;
 import co.edu.unbosque.foresta.model.DTO.*;
 import co.edu.unbosque.foresta.model.entity.Order;
 import co.edu.unbosque.foresta.repository.IOrderRepository;
@@ -16,8 +15,6 @@ import co.edu.unbosque.foresta.service.interfaces.IPrecioService;
 import co.edu.unbosque.foresta.service.interfaces.IOrdenService;
 import co.edu.unbosque.foresta.service.interfaces.ISaldoService;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,10 +36,13 @@ public class OrdenServiceImpl implements IOrdenService {
     private final ContratosClient contratos;
     private final InversionistasInternalClient inversionistasInternal;
     private final InversionistasAuthClient inversionistasAuth;
+
+    private final NotificacionesClient notificacionesClient;
     private final AlpacaTradingClient alpaca;
     private final IPrecioService precios;
     private final ISaldoService saldoService;
     private final ModelMapper mm;
+    private final AuditSender auditSender;
 
     private static final Set<String> FINAL_STATES = Set.of(
             "FILLED","CANCELED","EXPIRED","REJECTED","DONE_FOR_DAY"
@@ -56,7 +56,7 @@ public class OrdenServiceImpl implements IOrdenService {
                             IPrecioService precios,
                             ISaldoService saldoService,
                             ModelMapper mm,
-                            @Qualifier("internalRestTemplate") RestTemplate restTemplate) {
+                            @Qualifier("internalRestTemplate") RestTemplate restTemplate, NotificacionesClient notificacionesClient, AuditSender auditSender) {
         this.repo = repo;
         this.contratos = contratos;
         this.inversionistasInternal = inversionistasInternal;
@@ -66,11 +66,26 @@ public class OrdenServiceImpl implements IOrdenService {
         this.saldoService = saldoService;
         this.mm = mm;
         this.restTemplate = restTemplate;
+        this.notificacionesClient = notificacionesClient;
+        this.auditSender = auditSender;
     }
 
     @Transactional
     @Override
     public OrderDTO crear(OrderCreateRequestDTO req) {
+        auditSender.log("", new AuditLogRequest(
+                "ORD_CREATE_REQUEST",
+                "/api/ordenes",
+                "Solicitud de creación de orden",
+                java.util.Map.of(
+                        "symbol", req != null ? req.getSymbol() : null,
+                        "side", req != null ? req.getSide() : null,
+                        "type", req != null ? req.getType() : null,
+                        "timeInForce", req != null ? req.getTimeInForce() : null,
+                        "qty", req != null ? req.getQty() : null
+                )
+        ));
+
         validarReq(req);
 
         ContratoActivoDTO contrato = obtenerContratoActivo();
@@ -88,6 +103,18 @@ public class OrdenServiceImpl implements IOrdenService {
             var trading = saldoService.obtenerSaldoUsuarioActual();
             BigDecimal buyingPower = safeBD(trading.getBuyingPower());
             if (buyingPower.compareTo(net) < 0) {
+                auditSender.log("", new AuditLogRequest(
+                        "ORD_CREATE_INSUFFICIENT_FUNDS",
+                        "/api/ordenes",
+                        "Fondos insuficientes",
+                        java.util.Map.of(
+                                "symbol", req.getSymbol(),
+                                "qty", req.getQty(),
+                                "unitPrice", unitPrice,
+                                "net", net,
+                                "buyingPower", buyingPower
+                        )
+                ));
                 throw new BadRequestException(
                         "Saldo insuficiente. Buying power: " + buyingPower.toPlainString() +
                                 " USD, requerido: " + net.toPlainString() + " USD"
@@ -114,8 +141,25 @@ public class OrdenServiceImpl implements IOrdenService {
         o.setMoneda(contrato.getMoneda() != null ? contrato.getMoneda() : "USD");
 
         Order g = repo.save(o);
+
+        auditSender.log("", new AuditLogRequest(
+                "ORD_CREATE_SAVED",
+                "/api/ordenes",
+                "Orden creada en BD",
+                java.util.Map.of(
+                        "orderDbId", g.getId(),
+                        "symbol", g.getSymbol(),
+                        "side", g.getSide(),
+                        "status", g.getStatus(),
+                        "qty", g.getQty() != null ? g.getQty().toPlainString() : null,
+                        "unitPrice", g.getUnitPrice(),
+                        "net", g.getNetAmount()
+                )
+        ));
+
         return mapOut(g);
     }
+
 
     @Transactional(readOnly = true)
     @Override
@@ -226,7 +270,9 @@ public class OrdenServiceImpl implements IOrdenService {
         e.setApprovedAt(Instant.now());
         e.setRejectReason(null);
 
-        return mapOut(repo.save(e));
+        Order guardada = repo.save(e);
+        notificarSiFilled(guardada);
+        return mapOut(guardada);
     }
 
     @Transactional
@@ -453,6 +499,43 @@ public class OrdenServiceImpl implements IOrdenService {
             }
         }
         return actualizadas;
+    }
+
+    private void notificarSiFilled(Order o) {
+        if (o == null) return;
+        if (!"FILLED".equalsIgnoreCase(o.getStatus())) return;
+        if (o.getFilledNotifiedAt() != null) return;
+
+        String nombre = null, correo = null;
+        try {
+            var inv = inversionistasInternal.obtenerPorId(o.getInversionistaId());
+            if (inv != null) {
+                nombre = ((inv.getNombre() != null ? inv.getNombre() : "") + " " +
+                        (inv.getApellido() != null ? inv.getApellido() : "")).trim();
+                correo = inv.getCorreo();
+            }
+        } catch (Exception ignored) {}
+
+        if (correo == null || correo.isBlank()) return;
+
+        co.edu.unbosque.foresta.integration.DTO.OrdenFilledEmailRequest req =
+                new co.edu.unbosque.foresta.integration.DTO.OrdenFilledEmailRequest();
+        req.setOrderDbId(o.getId());
+        req.setSymbol(o.getSymbol());
+        req.setSide(o.getSide());
+        req.setQty(o.getQty() != null ? o.getQty().toPlainString() : null);
+        req.setUnitPrice(o.getUnitPrice());
+        req.setNetAmount(o.getNetAmount());
+        req.setMoneda(o.getMoneda());
+        req.setFilledAt(o.getActualizadoEn());
+        req.setInversionistaNombre(nombre);
+        req.setInversionistaCorreo(correo);
+
+        try {
+            notificacionesClient.notificarOrdenFilled(req);
+            o.setFilledNotifiedAt(Instant.now());
+            repo.save(o);
+        } catch (Exception ignored) { }
     }
 
     private boolean isActive(String st) {

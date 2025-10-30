@@ -1,6 +1,5 @@
 package co.edu.unbosque.foresta.service.implementations;
 
-
 import co.edu.unbosque.foresta.exceptions.exceptions.BadRequestException;
 import co.edu.unbosque.foresta.exceptions.exceptions.ConflictException;
 import co.edu.unbosque.foresta.exceptions.exceptions.NotFoundException;
@@ -17,6 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 
 @Service
 public class PaisServiceImpl implements IPaisService {
@@ -24,13 +27,16 @@ public class PaisServiceImpl implements IPaisService {
     private final IPaisRepository paisRepo;
     private final ISituacionEconomicaRepository sitEcoRepo;
     private final ModelMapper mm;
+    private final AuditSender auditSender;
 
     public PaisServiceImpl(IPaisRepository paisRepo,
                            ISituacionEconomicaRepository sitEcoRepo,
-                           ModelMapper mm) {
+                           ModelMapper mm,
+                           AuditSender auditSender) {
         this.paisRepo = paisRepo;
         this.sitEcoRepo = sitEcoRepo;
         this.mm = mm;
+        this.auditSender = auditSender;
     }
 
     @Override
@@ -39,22 +45,32 @@ public class PaisServiceImpl implements IPaisService {
         normalizar(dto);
         validarCampos(dto);
         validarDuplicados(dto);
-
         SituacionEconomica se = cargarSituacionEconomicaSiViene(dto.getSituacionEconomicaDTO());
-
         Pais entity = construirEntidad(dto, se);
         Pais guardado = paisRepo.save(entity);
-
+        auditSender.log("", new AuditLogRequest(
+                "CAT_COUNTRY_CREATE",
+                "/api/catalogos/paises",
+                "Crear país",
+                Map.of("paisId", guardado.getId(), "codigoIso3", guardado.getCodigoIso3(), "nombre", guardado.getNombre(), "situacionEconomicaId", se != null ? se.getId() : null)
+        ));
         return aDTO(guardado);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PaisDTO> listar() {
-        return paisRepo.findAll()
+        List<PaisDTO> res = paisRepo.findAll()
                 .stream()
                 .map(this::aDTO)
                 .toList();
+        auditSender.log("", new AuditLogRequest(
+                "CAT_COUNTRY_LIST",
+                "/api/catalogos/paises",
+                "Listar países",
+                Map.of("total", res.size())
+        ));
+        return res;
     }
 
     @Override
@@ -62,6 +78,12 @@ public class PaisServiceImpl implements IPaisService {
     public PaisDTO obtener(Long id) {
         Pais p = paisRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("País no encontrado: " + id));
+        auditSender.log("", new AuditLogRequest(
+                "CAT_COUNTRY_GET",
+                "/api/catalogos/paises/" + id,
+                "Obtener país",
+                Map.of("paisId", id)
+        ));
         return aDTO(p);
     }
 

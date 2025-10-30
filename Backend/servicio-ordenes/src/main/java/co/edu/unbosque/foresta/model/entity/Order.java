@@ -73,6 +73,9 @@ public class Order {
     @Column(name="reject_reason", length = 255)
     private String rejectReason;
 
+    @Column(name="filled_notified_at")
+    private Instant filledNotifiedAt;
+
     // Getters/Setters
     public Long getId() {
         return id;
@@ -249,4 +252,7 @@ public class Order {
     public void setRejectReason(String rejectReason) {
         this.rejectReason = rejectReason;
     }
+
+    public Instant getFilledNotifiedAt() { return filledNotifiedAt; }
+    public void setFilledNotifiedAt(Instant filledNotifiedAt) { this.filledNotifiedAt = filledNotifiedAt; }
 }
