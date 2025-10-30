@@ -135,14 +135,16 @@ export default function Navbar() {
                   >
                     Comprar
                   </NavLink>
-                  
                   <NavLink
                     to="/ordenes/vender"
-                    className={({ isActive }) => `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`}
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
                   >
                     Vender
                   </NavLink>
-                  
                   <NavLink
                     to="/ordenes/mis-ordenes"
                     className={({ isActive }) =>
@@ -204,16 +206,33 @@ export default function Navbar() {
 
               {/* --- Admin --- */}
               {isAuthenticated && isAdmin && (
-                <NavLink
-                  to="/admin/comisionistas"
-                  className={({ isActive }) =>
-                    `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
-                  }
-                >
-                  Comisionistas
-                </NavLink>
+                <>
+                  <NavLink
+                    to="/admin/comisionistas"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Comisionistas
+                  </NavLink>
+
+                  {/* NUEVO: Auditoría */}
+                  <NavLink
+                    to="/admin/auditoria"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Auditoría
+                  </NavLink>
+
+                  <CatalogLinks />
+                </>
               )}
-              {isAuthenticated && isAdmin && <CatalogLinks />}
             </div>
           </div>
 
@@ -255,7 +274,7 @@ export default function Navbar() {
         </div>
 
         {/* MOBILE */}
-        <div className="md:hidden flex gap-1 pb-3">
+        <div className="md:hidden flex gap-1 pb-3 flex-wrap">
           <NavLink
             to="/"
             end
@@ -302,12 +321,20 @@ export default function Navbar() {
                 Recargar
               </NavLink>
               <NavLink
-                to="/ordenes/nueva"
+                to="/ordenes/crear"
                 className={({ isActive }) =>
                   `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
                 }
               >
-                Nueva orden
+                Comprar
+              </NavLink>
+              <NavLink
+                to="/ordenes/vender"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Vender
               </NavLink>
               <NavLink
                 to="/ordenes/mis-ordenes"
@@ -368,6 +395,14 @@ export default function Navbar() {
                 }
               >
                 Comisionistas
+              </NavLink>
+              <NavLink
+                to="/admin/auditoria"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Auditoría
               </NavLink>
               <CatalogLinks />
             </>

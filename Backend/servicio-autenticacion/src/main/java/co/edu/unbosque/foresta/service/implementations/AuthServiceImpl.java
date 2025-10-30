@@ -16,6 +16,10 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.UUID;
 
+import java.util.Map;
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
+
 @Service
 public class AuthServiceImpl implements IAuthService {
 
@@ -31,6 +35,7 @@ public class AuthServiceImpl implements IAuthService {
     private final JwtService jwt;
     private final IEmailService emailService;
     private final ModelMapper modelMapper;
+    private final AuditSender auditSender;
 
     public AuthServiceImpl(IUsuarioRepository usuarioRepo,
                            IRolRepository rolRepo,
@@ -39,7 +44,8 @@ public class AuthServiceImpl implements IAuthService {
                            BCryptPasswordEncoder encriptador,
                            JwtService jwt,
                            ModelMapper modelMapper,
-                           IEmailService emailService) {
+                           IEmailService emailService,
+                           AuditSender auditSender) {
         this.usuarioRepo = usuarioRepo;
         this.rolRepo = rolRepo;
         this.refreshRepo = refreshRepo;
@@ -48,6 +54,7 @@ public class AuthServiceImpl implements IAuthService {
         this.jwt = jwt;
         this.modelMapper = modelMapper;
         this.emailService = emailService;
+        this.auditSender = auditSender;
     }
 
     @Override
@@ -59,6 +66,13 @@ public class AuthServiceImpl implements IAuthService {
 
         String tokenAcceso = generarTokenAcceso(usuario);
         RefreshToken refreshToken = crearYGuardarRefreshToken(usuario);
+
+        auditSender.log("Bearer " + tokenAcceso, new AuditLogRequest(
+                "AUTH_LOGIN_SUCCESS",
+                "/api/auth/login",
+                "Inicio de sesión",
+                Map.of("usuarioId", usuario.getId(), "correo", usuario.getCorreo())
+        ));
 
         return construirRespuestaLogin(usuario, tokenAcceso, refreshToken.getToken());
     }
@@ -73,6 +87,14 @@ public class AuthServiceImpl implements IAuthService {
         RefreshToken rt = validarRefreshToken(token);
         Usuario usuario = rt.getUsuario();
         String access = generarTokenAcceso(usuario);
+
+        auditSender.log("Bearer " + access, new AuditLogRequest(
+                "AUTH_REFRESH",
+                "/api/auth/refresh",
+                "Refresco de token",
+                Map.of("usuarioId", usuario.getId())
+        ));
+
         return construirRespuestaLogin(usuario, access, token);
     }
 
@@ -81,6 +103,13 @@ public class AuthServiceImpl implements IAuthService {
         var rt = validarRefreshToken(refreshToken);
         rt.setRevocado(true);
         refreshRepo.save(rt);
+
+        auditSender.log("", new AuditLogRequest(
+                "AUTH_LOGOUT",
+                "/api/auth/logout",
+                "Cierre de sesión",
+                Map.of("usuarioId", rt.getUsuario().getId())
+        ));
     }
 
     @Override
@@ -94,6 +123,13 @@ public class AuthServiceImpl implements IAuthService {
         Rol rolInv = obtenerRol(RolEnum.INVERSIONISTA);
         Usuario u = construirUsuario(correo, req.getContrasena(), rolInv);
         Usuario guardado = usuarioRepo.save(u);
+
+        auditSender.log("", new AuditLogRequest(
+                "AUTH_REGISTER_INV",
+                "/api/auth/registrar/inversionista",
+                "Registro inversionista",
+                Map.of("usuarioId", guardado.getId(), "correo", guardado.getCorreo())
+        ));
 
         return construirSignupResponse(guardado, RolEnum.INVERSIONISTA);
     }
@@ -110,6 +146,13 @@ public class AuthServiceImpl implements IAuthService {
         Usuario nuevo = construirUsuario(correo, req.getContrasena(), rolCom);
         Usuario guardado = usuarioRepo.save(nuevo);
 
+        auditSender.log("", new AuditLogRequest(
+                "AUTH_REGISTER_COM",
+                "/api/auth/registrar/comisionista",
+                "Registro comisionista",
+                Map.of("usuarioId", guardado.getId(), "correo", guardado.getCorreo())
+        ));
+
         return construirSignupResponse(guardado, RolEnum.COMISIONISTA);
     }
 
@@ -124,6 +167,13 @@ public class AuthServiceImpl implements IAuthService {
             resetRepo.save(pr);
 
             emailService.enviarResetPassword(user.getCorreo(), pr.getToken());
+
+            auditSender.log("", new AuditLogRequest(
+                    "AUTH_PWD_RESET_REQUEST",
+                    "/api/auth/password/recover",
+                    "Solicitud recuperación",
+                    Map.of("usuarioId", user.getId(), "correo", user.getCorreo())
+            ));
         });
     }
 
@@ -131,6 +181,13 @@ public class AuthServiceImpl implements IAuthService {
     public void restablecer(ResetPasswordRequestDTO solicitud) {
         PasswordResetToken resetToken = validarTokenRecuperacion(solicitud.getToken());
         actualizarContrasenaYMarcarTokenUsado(resetToken.getUsuario(), resetToken, solicitud.getNuevaContrasena());
+
+        auditSender.log("", new AuditLogRequest(
+                "AUTH_PWD_RESET_CONFIRM",
+                "/api/auth/password/reset",
+                "Restablecimiento de contraseña",
+                Map.of("usuarioId", resetToken.getUsuario().getId())
+        ));
     }
 
     @Override
@@ -189,6 +246,12 @@ public class AuthServiceImpl implements IAuthService {
 
     private void validarNoBloqueado(Usuario usuario) {
         if (usuario.getIntentosFallidos() >= MAX_INTENTOS_FALLIDOS) {
+            auditSender.log("", new AuditLogRequest(
+                    "AUTH_LOGIN_BLOCKED",
+                    "/api/auth/login",
+                    "Cuenta bloqueada",
+                    Map.of("usuarioId", usuario.getId(), "correo", usuario.getCorreo())
+            ));
             throw new AuthException("CUENTA_BLOQUEADA");
         }
     }
@@ -197,6 +260,12 @@ public class AuthServiceImpl implements IAuthService {
         if (!encriptador.matches(contrasenaIngresada, usuario.getContrasenaHash())) {
             usuario.setIntentosFallidos(usuario.getIntentosFallidos() + 1);
             usuarioRepo.save(usuario);
+            auditSender.log("", new AuditLogRequest(
+                    "AUTH_LOGIN_FAILED",
+                    "/api/auth/login",
+                    "Inicio de sesión fallido",
+                    Map.of("usuarioId", usuario.getId(), "correo", usuario.getCorreo(), "intentos", usuario.getIntentosFallidos())
+            ));
             throw new AuthException("CREDENCIALES_INVALIDAS");
         }
     }

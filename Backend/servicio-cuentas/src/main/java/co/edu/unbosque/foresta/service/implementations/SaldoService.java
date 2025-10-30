@@ -13,12 +13,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
+
 @Service
 public class SaldoService implements ISaldoService {
 
     private final InversionistaClient inversionistaClient;
     private final RestTemplate restTemplate;
     private final ITransferLogRepository transferLogRepository;
+    private final AuditSender auditSender;
 
     @Value("${alpaca.broker.account-status-url}")
     private String accountStatusUrl;
@@ -31,33 +37,56 @@ public class SaldoService implements ISaldoService {
 
     public SaldoService(InversionistaClient inversionistaClient,
                         RestTemplate restTemplate,
-                        ITransferLogRepository transferLogRepository) {
+                        ITransferLogRepository transferLogRepository,
+                        AuditSender auditSender) {
         this.inversionistaClient = inversionistaClient;
         this.restTemplate = restTemplate;
         this.transferLogRepository = transferLogRepository;
+        this.auditSender = auditSender;
     }
 
     @Override
     public TradingDetailDTO obtenerSaldoUsuarioActual() {
         MiAlpacaDTO mi = cargarCuentaAlpaca();
         String url = construirUrlSaldo(mi.getAlpacaId());
+        auditSender.log("", new AuditLogRequest(
+                "SALDO_GET_REQUEST",
+                "/api/saldo/mi",
+                "Solicitar saldo",
+                Map.of("alpacaAccountId", mi.getAlpacaId())
+        ));
         return consultarSaldo(url);
     }
 
     @Override
     public String calcularAvisoParaUsuarioActual() {
         MiAlpacaDTO mi = cargarCuentaAlpaca();
-        return transferLogRepository.findTop1ByAlpacaAccountIdOrderByCreatedAtDesc(mi.getAlpacaId())
+        String r = transferLogRepository.findTop1ByAlpacaAccountIdOrderByCreatedAtDesc(mi.getAlpacaId())
                 .map(last -> {
                     String st = last.getStatus() == null ? "" : last.getStatus().toUpperCase();
                     return st.startsWith("COMPLETE") ? null : "Transferencia en proceso. El saldo cambiará automáticamente al completarse.";
                 })
                 .orElse(null);
+        auditSender.log("", new AuditLogRequest(
+                "SALDO_ADVICE_RESULT",
+                "/api/saldo/aviso",
+                "Calcular aviso de transferencia",
+                Map.of("alpacaAccountId", mi.getAlpacaId(), "advicePresent", r != null)
+        ));
+        return r;
     }
 
     private MiAlpacaDTO cargarCuentaAlpaca() {
         MiAlpacaDTO mi = inversionistaClient.miAlpaca();
-        if (mi == null || mi.getAlpacaId() == null) throw new NotFoundException("No se encontró cuenta Alpaca asociada");
+        if (mi == null || mi.getAlpacaId() == null) {
+            auditSender.log("", new AuditLogRequest(
+                    "SALDO_INV_ALPACA_NOT_FOUND",
+                    "/api/saldo/*",
+                    "Cuenta Alpaca no asociada",
+                    Map.of()
+            ));
+            throw new NotFoundException("No se encontró cuenta Alpaca asociada");
+        }
         return mi;
     }
 
@@ -69,9 +98,29 @@ public class SaldoService implements ISaldoService {
         try {
             ResponseEntity<TradingDetailDTO> resp = restTemplate.exchange(
                     url, HttpMethod.GET, new HttpEntity<>(headersJson()), TradingDetailDTO.class);
-            if (resp.getBody() == null) throw new BadRequestException("Respuesta inválida desde Alpaca");
+            if (resp.getBody() == null) {
+                auditSender.log("", new AuditLogRequest(
+                        "SALDO_REMOTE_BAD_RESPONSE",
+                        "/integracion/alpaca/account",
+                        "Respuesta vacía desde Alpaca",
+                        Map.of("statusHttp", resp.getStatusCode().value())
+                ));
+                throw new BadRequestException("Respuesta inválida desde Alpaca");
+            }
+            auditSender.log("", new AuditLogRequest(
+                    "SALDO_REMOTE_OK",
+                    "/integracion/alpaca/account",
+                    "Consulta de saldo remota",
+                    Map.of("statusHttp", resp.getStatusCode().value())
+            ));
             return resp.getBody();
         } catch (HttpClientErrorException e) {
+            auditSender.log("", new AuditLogRequest(
+                    "SALDO_REMOTE_HTTP_ERROR",
+                    "/integracion/alpaca/account",
+                    "Error HTTP consultando saldo",
+                    Map.of("statusHttp", e.getStatusCode().value())
+            ));
             throw new BadRequestException("Error consultando saldo Alpaca: " + e.getStatusCode().value());
         }
     }

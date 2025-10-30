@@ -20,7 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 
 @Service
 public class ComisionistaServiceImpl implements IComisionistaService {
@@ -29,15 +33,18 @@ public class ComisionistaServiceImpl implements IComisionistaService {
     private final AuthClient authClient;
     private final CatalogosClient catClient;
     private final ModelMapper mm;
+    private final AuditSender auditSender;
 
     public ComisionistaServiceImpl(IComisionistaRepository repo,
                                    AuthClient authClient,
                                    CatalogosClient catClient,
-                                   ModelMapper mm) {
+                                   ModelMapper mm,
+                                   AuditSender auditSender) {
         this.repo = repo;
         this.authClient = authClient;
         this.catClient = catClient;
         this.mm = mm;
+        this.auditSender = auditSender;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -46,6 +53,12 @@ public class ComisionistaServiceImpl implements IComisionistaService {
         ComisionistaRegistroRequestDTO n = prepararRegistro(req);
         Long usuarioId = registrarUsuarioAuth(n);
         Comisionista guardado = persistirComisionista(usuarioId, n);
+        auditSender.log("", new AuditLogRequest(
+                "COM_REGISTER",
+                "/api/comisionistas/registrar",
+                "Registro comisionista",
+                Map.of("usuarioId", usuarioId, "comisionistaId", guardado.getId(), "correo", n.getCorreo())
+        ));
         return toDTO(guardado);
     }
 
@@ -57,16 +70,30 @@ public class ComisionistaServiceImpl implements IComisionistaService {
         }
         Comisionista c = repo.findByCorreoIgnoreCase(correoAutenticado)
                 .orElseThrow(() -> new NotFoundException("Perfil no encontrado"));
-        return toDTO(c);
+        ComisionistaDTO dto = toDTO(c);
+        auditSender.log("", new AuditLogRequest(
+                "COM_GET_ME",
+                "/api/comisionistas/mi-perfil",
+                "Obtener mi perfil comisionista",
+                Map.of("correo", correoAutenticado)
+        ));
+        return dto;
     }
 
     @Transactional(readOnly = true)
     @Override
     public List<ComisionistaDTO> listarTodos() {
-        return repo.findAll()
+        List<ComisionistaDTO> res = repo.findAll()
                 .stream()
                 .map(e -> mm.map(e, ComisionistaDTO.class))
                 .collect(Collectors.toList());
+        auditSender.log("", new AuditLogRequest(
+                "COM_LIST_ALL",
+                "/api/comisionistas",
+                "Listar comisionistas",
+                Map.of("total", res.size())
+        ));
+        return res;
     }
 
     @Transactional(readOnly = true)
@@ -74,7 +101,14 @@ public class ComisionistaServiceImpl implements IComisionistaService {
     public ComisionistaDTO obtenerPorId(Long id) {
         Comisionista c = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Comisionista not found"));
-        return mm.map(c, ComisionistaDTO.class);
+        ComisionistaDTO dto = mm.map(c, ComisionistaDTO.class);
+        auditSender.log("", new AuditLogRequest(
+                "COM_GET_BY_ID",
+                "/api/comisionistas/" + id,
+                "Obtener comisionista por id",
+                Map.of("comisionistaId", id)
+        ));
+        return dto;
     }
 
     private ComisionistaRegistroRequestDTO prepararRegistro(ComisionistaRegistroRequestDTO req) {

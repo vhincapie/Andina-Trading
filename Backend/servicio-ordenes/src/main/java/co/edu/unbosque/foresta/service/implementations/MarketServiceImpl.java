@@ -5,8 +5,6 @@ import co.edu.unbosque.foresta.model.DTO.StockDTO;
 import co.edu.unbosque.foresta.service.interfaces.IMarketService;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,11 +13,16 @@ import org.springframework.web.client.RestTemplate;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 
 @Service
 public class MarketServiceImpl implements IMarketService {
 
     private final RestTemplate restTemplate;
+    private final AuditSender auditSender;
 
     @Value("${finnhub.api.key}")
     private String apiKey;
@@ -28,8 +31,9 @@ public class MarketServiceImpl implements IMarketService {
     private static final String SYMBOL_SEARCH_URL = "https://finnhub.io/api/v1/search?q=";
     private static final String SYMBOL_QUOTE_URL  = "https://finnhub.io/api/v1/quote?symbol=";
 
-    public MarketServiceImpl(@Qualifier("externalRestTemplate") RestTemplate restTemplate) {
+    public MarketServiceImpl(@Qualifier("externalRestTemplate") RestTemplate restTemplate, AuditSender auditSender) {
         this.restTemplate = restTemplate;
+        this.auditSender = auditSender;
     }
 
     @Override
@@ -38,29 +42,67 @@ public class MarketServiceImpl implements IMarketService {
         boolean businessDay = now.getDayOfWeek() != DayOfWeek.SATURDAY && now.getDayOfWeek() != DayOfWeek.SUNDAY;
         LocalTime t = now.toLocalTime();
         boolean open = businessDay && !t.isBefore(LocalTime.of(9,30)) && t.isBefore(LocalTime.of(16,0));
-        return new MarketStatusDTO(open, open ? "El mercado está abierto" : "El mercado está cerrado");
+        MarketStatusDTO dto = new MarketStatusDTO(open, open ? "El mercado está abierto" : "El mercado está cerrado");
+        auditSender.log("", new AuditLogRequest(
+                "MARKET_STATUS",
+                "/api/market/status",
+                "Estado del mercado",
+                Map.of("open", open, "nyTime", now.toString())
+        ));
+        return dto;
     }
 
     @Override
     public StockDTO getQuote(String symbol) {
-        String url = SYMBOL_QUOTE_URL + symbol + "&token=" + apiKey;
-        String response = restTemplate.getForObject(url, String.class);
-        if (response == null || response.isBlank() || "{}".equals(response)) {
-            throw new RuntimeException("Sin datos para símbolo: " + symbol);
+        try {
+            String url = SYMBOL_QUOTE_URL + symbol + "&token=" + apiKey;
+            String response = restTemplate.getForObject(url, String.class);
+            if (response == null || response.isBlank() || "{}".equals(response)) {
+                auditSender.log("", new AuditLogRequest(
+                        "MARKET_QUOTE_EMPTY",
+                        "/api/market/quote",
+                        "Respuesta vacía",
+                        Map.of("symbol", symbol)
+                ));
+                throw new RuntimeException("Sin datos para símbolo: " + symbol);
+            }
+            JSONObject json = new JSONObject(response);
+
+            double c  = json.optDouble("c", 0.0);
+            double h  = json.optDouble("h", 0.0);
+            double l  = json.optDouble("l", 0.0);
+            double pc = json.optDouble("pc", 0.0);
+
+            StockDTO dto = new StockDTO(
+                    symbol.toUpperCase(),
+                    "Cotización de " + symbol.toUpperCase(),
+                    c, h, l, pc,
+                    System.currentTimeMillis() / 1000
+            );
+            auditSender.log("", new AuditLogRequest(
+                    "MARKET_QUOTE_OK",
+                    "/api/market/quote",
+                    "Cotización consultada",
+                    Map.of("symbol", symbol, "price", c)
+            ));
+            return dto;
+        } catch (RuntimeException ex) {
+            auditSender.log("", new AuditLogRequest(
+                    "MARKET_QUOTE_ERROR",
+                    "/api/market/quote",
+                    "Error obteniendo cotización",
+                    Map.of("symbol", symbol, "message", ex.getMessage())
+            ));
+            throw ex;
+        } catch (Exception ex) {
+            auditSender.log("", new AuditLogRequest(
+                    "MARKET_QUOTE_ERROR",
+                    "/api/market/quote",
+                    "Error obteniendo cotización",
+                    Map.of("symbol", symbol, "message", ex.getMessage())
+            ));
+            throw new RuntimeException("Error al consultar cotización: " + symbol);
         }
-        JSONObject json = new JSONObject(response);
-
-        double c  = json.optDouble("c", 0.0);
-        double h  = json.optDouble("h", 0.0);
-        double l  = json.optDouble("l", 0.0);
-        double pc = json.optDouble("pc", 0.0);
-
-        return new StockDTO(
-                symbol.toUpperCase(),
-                "Cotización de " + symbol.toUpperCase(),
-                c, h, l, pc,
-                System.currentTimeMillis() / 1000
-        );
     }
 
     @Override
@@ -68,11 +110,43 @@ public class MarketServiceImpl implements IMarketService {
         List<StockDTO> suggestions = new ArrayList<>();
         String lowerQuery = query.toLowerCase();
 
-        suggestions.addAll(buscarPorNombre(query));
-        if (!suggestions.isEmpty()) return suggestions;
+        try {
+            suggestions.addAll(buscarPorNombre(query));
+            if (!suggestions.isEmpty()) {
+                auditSender.log("", new AuditLogRequest(
+                        "MARKET_SEARCH_OK",
+                        "/api/market/search",
+                        "Búsqueda por nombre",
+                        Map.of("query", query, "total", suggestions.size())
+                ));
+                return suggestions;
+            }
 
-        suggestions.addAll(buscarPorMic(lowerQuery));
-        return suggestions;
+            suggestions.addAll(buscarPorMic(lowerQuery));
+            auditSender.log("", new AuditLogRequest(
+                    "MARKET_SEARCH_OK",
+                    "/api/market/search",
+                    "Búsqueda por MIC",
+                    Map.of("query", query, "total", suggestions.size())
+            ));
+            return suggestions;
+        } catch (RuntimeException ex) {
+            auditSender.log("", new AuditLogRequest(
+                    "MARKET_SEARCH_ERROR",
+                    "/api/market/search",
+                    "Error buscando símbolos",
+                    Map.of("query", query, "message", ex.getMessage())
+            ));
+            throw ex;
+        } catch (Exception ex) {
+            auditSender.log("", new AuditLogRequest(
+                    "MARKET_SEARCH_ERROR",
+                    "/api/market/search",
+                    "Error buscando símbolos",
+                    Map.of("query", query, "message", ex.getMessage())
+            ));
+            throw new RuntimeException("Error al buscar símbolos: " + ex.getMessage());
+        }
     }
 
     private List<StockDTO> buscarPorNombre(String query) {

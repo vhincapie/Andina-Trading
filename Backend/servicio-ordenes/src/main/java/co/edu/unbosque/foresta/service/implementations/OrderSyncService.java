@@ -1,5 +1,7 @@
 package co.edu.unbosque.foresta.service.implementations;
 
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 import co.edu.unbosque.foresta.integration.AlpacaTradingClient;
 import co.edu.unbosque.foresta.integration.DTO.AlpacaAccountDTO;
 import co.edu.unbosque.foresta.integration.InversionistasInternalClient;
@@ -22,15 +24,17 @@ public class OrderSyncService {
     private final AlpacaTradingClient alpaca;
     private final NotificacionesClient notificacionesClient;
     private final InversionistasInternalClient inversionistasInternal;
+    private final AuditSender auditSender;
 
     public OrderSyncService(IOrderRepository orderRepository,
                             AlpacaTradingClient alpaca,
                             NotificacionesClient notificacionesClient,
-                            InversionistasInternalClient inversionistasInternal) {
+                            InversionistasInternalClient inversionistasInternal, AuditSender auditSender) {
         this.orderRepository = orderRepository;
         this.alpaca = alpaca;
         this.notificacionesClient = notificacionesClient;
         this.inversionistasInternal = inversionistasInternal;
+        this.auditSender = auditSender;
     }
 
     private static String normalize(String s) {
@@ -40,10 +44,27 @@ public class OrderSyncService {
     @Scheduled(fixedDelay = 20_000, initialDelay = 10_000)
     @Transactional
     public void sincronizarEstadosOrdenes() {
+        auditSender.log("", new AuditLogRequest(
+                "ORD_SYNC_START",
+                "/jobs/orders/sync",
+                "Inicio ciclo de sincronización de órdenes",
+                java.util.Map.of()
+        ));
+
         reintentarNotificacionesPendientes();
 
         List<Order> pendientes = orderRepository.findOrdersToSync();
-        if (pendientes.isEmpty()) return;
+        if (pendientes.isEmpty()) {
+            auditSender.log("", new AuditLogRequest(
+                    "ORD_SYNC_NO_CHANGES",
+                    "/jobs/orders/sync",
+                    "Sin órdenes pendientes por sincronizar",
+                    java.util.Map.of()
+            ));
+            return;
+        }
+
+        int actualizadas = 0;
 
         for (Order o : pendientes) {
             try {
@@ -59,18 +80,61 @@ public class OrderSyncService {
                 if (nuevo != null && !nuevo.equals(actual)) {
                     o.setStatus(nuevo);
                     orderRepository.save(o);
+                    actualizadas++;
+                    auditSender.log("", new AuditLogRequest(
+                            "ORD_STATUS_UPDATED",
+                            "/jobs/orders/sync",
+                            "Estado de orden actualizado",
+                            java.util.Map.of(
+                                    "orderDbId", o.getId(),
+                                    "alpacaOrderId", o.getAlpacaOrderId(),
+                                    "oldStatus", actual,
+                                    "newStatus", nuevo
+                            )
+                    ));
 
                     if ("FILLED".equalsIgnoreCase(nuevo) && o.getFilledNotifiedAt() == null) {
                         try {
                             enviarNotificacionFilled(o);
                             o.setFilledNotifiedAt(java.time.Instant.now());
                             orderRepository.save(o);
-                        } catch (Exception ignored) {}
+                            auditSender.log("", new AuditLogRequest(
+                                    "ORD_FILLED_NOTIFY_SENT",
+                                    "/jobs/orders/sync",
+                                    "Notificación de orden FILLED enviada",
+                                    java.util.Map.of("orderDbId", o.getId(), "alpacaOrderId", o.getAlpacaOrderId())
+                            ));
+                        } catch (Exception ex) {
+                            auditSender.log("", new AuditLogRequest(
+                                    "ORD_FILLED_NOTIFY_ERROR",
+                                    "/jobs/orders/sync",
+                                    "Error enviando notificación de orden FILLED",
+                                    java.util.Map.of("orderDbId", o.getId(), "message", ex.getMessage())
+                            ));
+                        }
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ex) {
+                auditSender.log("", new AuditLogRequest(
+                        "ORD_SYNC_ERROR",
+                        "/jobs/orders/sync",
+                        "Error sincronizando estado de orden",
+                        java.util.Map.of(
+                                "orderDbId", o != null ? o.getId() : null,
+                                "message", ex.getMessage()
+                        )
+                ));
+            }
         }
+
+        auditSender.log("", new AuditLogRequest(
+                "ORD_SYNC_DONE",
+                "/jobs/orders/sync",
+                "Fin ciclo de sincronización de órdenes",
+                java.util.Map.of("procesadas", pendientes.size(), "actualizadas", actualizadas)
+        ));
     }
+
 
     private void reintentarNotificacionesPendientes() {
         List<Order> sinNotif = orderRepository.findFilledWithoutNotification();

@@ -33,13 +33,18 @@ import MisOrdenesPage from "./pages/inversionista/MisOrdenesPage";
 import MisOrdenesComisionistaPage from "./pages/comisionista/MisOrdenesComisionistaPage";
 import ResumenComisionesPage from "./pages/comisionista/ResumenComisionesPage";
 
+import AuditoriaLogsPage from "./pages/admin/AuditoriaLogsPage";
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Públicas */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/registro-inversionista" element={<RegistroInversionistaPage />} />
+        <Route
+          path="/registro-inversionista"
+          element={<RegistroInversionistaPage />}
+        />
         <Route path="/recuperar-password" element={<RecoverPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
@@ -99,7 +104,7 @@ export default function App() {
               </InvestorRoute>
             }
           />
-          
+
           <Route
             path="/ordenes/mis-ordenes"
             element={
@@ -149,6 +154,14 @@ export default function App() {
             element={
               <AdminRoute allowedRoles={["ADMIN", "ADMINISTRADOR"]}>
                 <ComisionistasPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/auditoria"
+            element={
+              <AdminRoute allowedRoles={["ADMIN", "ADMINISTRADOR"]}>
+                <AuditoriaLogsPage />
               </AdminRoute>
             }
           />

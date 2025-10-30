@@ -20,6 +20,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 
 @Service
 public class AccountACHService implements IAccountACHService<AccountACHRelationShipDTO> {
@@ -28,6 +32,7 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
     private final IAccountACHRepository achRepository;
     private final InversionistaClient inversionistaClient;
     private final ModelMapper mm;
+    private final AuditSender auditSender;
 
     @Value("${alpaca.broker.api.key}")
     private String apiKey;
@@ -41,11 +46,13 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
     public AccountACHService(RestTemplate restTemplate,
                              IAccountACHRepository achRepository,
                              InversionistaClient inversionistaClient,
-                             ModelMapper mm) {
+                             ModelMapper mm,
+                             AuditSender auditSender) {
         this.restTemplate = restTemplate;
         this.achRepository = achRepository;
         this.inversionistaClient = inversionistaClient;
         this.mm = mm;
+        this.auditSender = auditSender;
     }
 
     @Transactional
@@ -59,11 +66,31 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
         try {
             ResponseAccountACHDTO creado = crearRemoto(url, normalized);
             guardarEntidad(creado, mi.getAlpacaId());
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_ACH_CREATE_SUCCESS",
+                    "/api/ach",
+                    "Crear relación ACH",
+                    Map.of("alpacaAccountId", mi.getAlpacaId(), "achId", creado.getId())
+            ));
             return creado;
         } catch (ConflictException e) {
             List<ResponseAccountACHDTO> existentes = listarAchRemotos(mi.getAlpacaId());
-            if (existentes.isEmpty()) throw e;
+            if (existentes.isEmpty()) {
+                auditSender.log("", new AuditLogRequest(
+                        "ALPACA_ACH_CREATE_CONFLICT_EMPTY",
+                        "/api/ach",
+                        "Conflicto creando ACH pero sin existentes",
+                        Map.of("alpacaAccountId", mi.getAlpacaId())
+                ));
+                throw e;
+            }
             sincronizarExistentes(mi.getAlpacaId(), existentes);
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_ACH_CREATE_CONFLICT_SYNCED",
+                    "/api/ach",
+                    "Conflicto creando ACH, se sincronizan existentes",
+                    Map.of("alpacaAccountId", mi.getAlpacaId(), "count", existentes.size())
+            ));
             return existentes.get(0);
         }
     }
@@ -71,16 +98,30 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
     @Override
     public List<AccountACHRelationShipDTO> getAllForAuthenticatedUser() {
         MiAlpacaDTO mi = cargarCuentaAlpaca();
-        return achRepository.findByAlpacaAccountId(mi.getAlpacaId())
+        List<AccountACHRelationShipDTO> res = achRepository.findByAlpacaAccountId(mi.getAlpacaId())
                 .stream()
                 .map(e -> mm.map(e, AccountACHRelationShipDTO.class))
                 .toList();
+        auditSender.log("", new AuditLogRequest(
+                "ALPACA_ACH_LIST_LOCAL",
+                "/api/ach",
+                "Listar ACH locales por cuenta",
+                Map.of("alpacaAccountId", mi.getAlpacaId(), "total", res.size())
+        ));
+        return res;
     }
 
     private MiAlpacaDTO cargarCuentaAlpaca() {
         MiAlpacaDTO mi = inversionistaClient.miAlpaca();
-        if (mi == null || mi.getAlpacaId() == null)
+        if (mi == null || mi.getAlpacaId() == null) {
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_ACH_INV_ALPACA_NOT_FOUND",
+                    "/api/ach",
+                    "Cuenta Alpaca no asociada",
+                    Map.of()
+            ));
             throw new NotFoundException("No se encontró cuenta Alpaca asociada");
+        }
         return mi;
     }
 
@@ -94,11 +135,39 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
                     url, HttpMethod.POST, new HttpEntity<>(dto, headersJson()), ResponseAccountACHDTO.class);
             if (response.getBody() == null)
                 throw new BadRequestException("Respuesta inválida desde Alpaca");
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_ACH_REMOTE_CREATE_OK",
+                    "/integracion/alpaca/ach",
+                    "Crear ACH remoto",
+                    Map.of("statusHttp", response.getStatusCode().value(), "achId", response.getBody().getId())
+            ));
             return response.getBody();
         } catch (HttpClientErrorException e) {
             int code = e.getStatusCode().value();
-            if (code == 409) throw new ConflictException("Relación ACH ya existe en Alpaca");
-            if (code == 400) throw new BadRequestException("Solicitud inválida a Alpaca");
+            if (code == 409) {
+                auditSender.log("", new AuditLogRequest(
+                        "ALPACA_ACH_REMOTE_CREATE_CONFLICT",
+                        "/integracion/alpaca/ach",
+                        "Conflicto al crear ACH remoto",
+                        Map.of("statusHttp", code)
+                ));
+                throw new ConflictException("Relación ACH ya existe en Alpaca");
+            }
+            if (code == 400) {
+                auditSender.log("", new AuditLogRequest(
+                        "ALPACA_ACH_REMOTE_CREATE_BAD_REQUEST",
+                        "/integracion/alpaca/ach",
+                        "Solicitud inválida a Alpaca",
+                        Map.of("statusHttp", code)
+                ));
+                throw new BadRequestException("Solicitud inválida a Alpaca");
+            }
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_ACH_REMOTE_CREATE_HTTP_ERROR",
+                    "/integracion/alpaca/ach",
+                    "Error HTTP creando ACH remoto",
+                    Map.of("statusHttp", code)
+            ));
             throw new BadRequestException("Error creando ACH: " + code);
         }
     }
@@ -108,7 +177,14 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
         ResponseEntity<ResponseAccountACHDTO[]> resp = restTemplate.exchange(
                 listUrl, HttpMethod.GET, new HttpEntity<>(headersJson()), ResponseAccountACHDTO[].class);
         ResponseAccountACHDTO[] body = resp.getBody();
-        return body == null ? List.of() : List.of(body);
+        List<ResponseAccountACHDTO> out = body == null ? List.of() : List.of(body);
+        auditSender.log("", new AuditLogRequest(
+                "ALPACA_ACH_REMOTE_LIST_OK",
+                "/integracion/alpaca/ach",
+                "Listar ACH remotos",
+                Map.of("alpacaAccountId", alpacaId, "total", out.size())
+        ));
+        return out;
     }
 
     private void guardarEntidad(ResponseAccountACHDTO dto, String alpacaId) {
@@ -116,15 +192,31 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
         entidad.setCreatedAt(LocalDateTime.now());
         entidad.setAlpacaAccountId(alpacaId);
         achRepository.save(entidad);
+        auditSender.log("", new AuditLogRequest(
+                "ALPACA_ACH_LOCAL_SAVE",
+                "/api/ach",
+                "Guardar ACH local",
+                Map.of("alpacaAccountId", alpacaId, "achId", dto.getId())
+        ));
     }
 
     private void sincronizarExistentes(String alpacaId, List<ResponseAccountACHDTO> existentes) {
         List<AccountACHRelationShip> actuales = achRepository.findByAlpacaAccountId(alpacaId);
+        int agregados = 0;
         for (ResponseAccountACHDTO r : existentes) {
             boolean yaExiste = actuales.stream()
                     .anyMatch(e -> r.getId().equals(e.getAchId()));
-            if (!yaExiste) guardarEntidad(r, alpacaId);
+            if (!yaExiste) {
+                guardarEntidad(r, alpacaId);
+                agregados++;
+            }
         }
+        auditSender.log("", new AuditLogRequest(
+                "ALPACA_ACH_LOCAL_SYNC",
+                "/api/ach",
+                "Sincronizar ACH locales con remotos",
+                Map.of("alpacaAccountId", alpacaId, "agregados", agregados, "remotos", existentes.size())
+        ));
     }
 
     private AccountACHRelationShipDTO normalizar(AccountACHRelationShipDTO r) {

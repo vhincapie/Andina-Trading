@@ -13,16 +13,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
 
 @Service
 public class SituacionEconomicaImpl implements ISituacionEconomicaService {
 
     private final ISituacionEconomicaRepository repo;
     private final ModelMapper mm;
+    private final AuditSender auditSender;
 
-    public SituacionEconomicaImpl(ISituacionEconomicaRepository repo, ModelMapper mm) {
+    public SituacionEconomicaImpl(ISituacionEconomicaRepository repo, ModelMapper mm, AuditSender auditSender) {
         this.repo = repo;
         this.mm = mm;
+        this.auditSender = auditSender;
     }
 
     @Override
@@ -31,20 +37,31 @@ public class SituacionEconomicaImpl implements ISituacionEconomicaService {
         normalizar(dto);
         validarCampos(dto);
         validarDuplicado(dto.getNombre());
-
         SituacionEconomica entity = construirEntidad(dto);
         SituacionEconomica guardada = repo.save(entity);
-
+        auditSender.log("", new AuditLogRequest(
+                "CAT_SIT_ECO_CREATE",
+                "/api/catalogos/situaciones-economicas",
+                "Crear situación económica",
+                Map.of("situacionEconomicaId", guardada.getId(), "nombre", guardada.getNombre())
+        ));
         return aDTO(guardada);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SituacionEconomicaDTO> listar() {
-        return repo.findAll()
+        List<SituacionEconomicaDTO> res = repo.findAll()
                 .stream()
                 .map(this::aDTO)
                 .toList();
+        auditSender.log("", new AuditLogRequest(
+                "CAT_SIT_ECO_LIST",
+                "/api/catalogos/situaciones-economicas",
+                "Listar situaciones económicas",
+                Map.of("total", res.size())
+        ));
+        return res;
     }
 
     @Override
@@ -52,6 +69,12 @@ public class SituacionEconomicaImpl implements ISituacionEconomicaService {
     public SituacionEconomicaDTO obtener(Long id) {
         SituacionEconomica se = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Situación económica no encontrada: " + id));
+        auditSender.log("", new AuditLogRequest(
+                "CAT_SIT_ECO_GET",
+                "/api/catalogos/situaciones-economicas/" + id,
+                "Obtener situación económica",
+                Map.of("situacionEconomicaId", id)
+        ));
         return aDTO(se);
     }
 

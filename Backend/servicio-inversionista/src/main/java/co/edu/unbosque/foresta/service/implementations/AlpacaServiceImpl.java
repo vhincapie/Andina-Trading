@@ -11,11 +11,17 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
+import co.edu.unbosque.foresta.auth.audit.AuditSender;
+import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
+
 @Slf4j
 @Service
 public class AlpacaServiceImpl implements IAlpacaService {
 
     private final RestTemplate restTemplate;
+    private final AuditSender auditSender;
 
     @Value("${alpaca.broker.api.key}")
     private String apiKey;
@@ -26,8 +32,9 @@ public class AlpacaServiceImpl implements IAlpacaService {
     @Value("${alpaca.broker.account-url}")
     private String baseUrl;
 
-    public AlpacaServiceImpl(RestTemplate restTemplate) {
+    public AlpacaServiceImpl(RestTemplate restTemplate, AuditSender auditSender) {
         this.restTemplate = restTemplate;
+        this.auditSender = auditSender;
     }
 
     private HttpHeaders buildAlpacaHeaders() {
@@ -59,20 +66,43 @@ public class AlpacaServiceImpl implements IAlpacaService {
             );
             AccountResponseDTO body = response.getBody();
             log.info("Alpaca response status={} id={}", response.getStatusCode(), body != null ? body.getId() : null);
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_CREATE_ACCOUNT_SUCCESS",
+                    "/integracion/alpaca/accounts",
+                    "Crear cuenta Alpaca",
+                    Map.of("statusHttp", response.getStatusCode().value(), "alpacaAccountId", body != null ? body.getId() : null, "email", emailForLog)
+            ));
             return body;
 
         } catch (HttpClientErrorException.Conflict e) {
-            log.warn("Alpaca conflict (duplicado): {}", e.getResponseBodyAsString());
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_CREATE_ACCOUNT_CONFLICT",
+                    "/integracion/alpaca/accounts",
+                    "Conflicto al crear cuenta Alpaca",
+                    Map.of("email", emailForLog, "statusHttp", 409, "payload", e.getResponseBodyAsString())
+            ));
             throw new RuntimeException("Cuenta Alpaca duplicada para este correo.", e);
 
         } catch (HttpClientErrorException e) {
             String payload = e.getResponseBodyAsString();
             log.error("Alpaca HTTP error {}: {}", e.getStatusCode(), payload);
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_CREATE_ACCOUNT_HTTP_ERROR",
+                    "/integracion/alpaca/accounts",
+                    "Error HTTP al crear cuenta Alpaca",
+                    Map.of("statusHttp", e.getStatusCode().value(), "payload", payload, "email", emailForLog)
+            ));
             throw new RuntimeException("Error API Alpaca: " + e.getStatusCode() + " - " + payload, e);
 
         } catch (ResourceAccessException e) {
             String msg = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : e.getMessage();
             log.error("Alpaca I/O error: {}", msg);
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_CREATE_ACCOUNT_IO_ERROR",
+                    "/integracion/alpaca/accounts",
+                    "Error de E/S al crear cuenta Alpaca",
+                    Map.of("mensaje", msg, "email", emailForLog)
+            ));
             throw new RuntimeException("No hay conexión con Alpaca (DNS/TLS/firewall): " + msg, e);
         }
     }
@@ -92,16 +122,35 @@ public class AlpacaServiceImpl implements IAlpacaService {
                     request,
                     AccountResponseDTO.class
             );
-            return response.getBody();
+            AccountResponseDTO body = response.getBody();
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_GET_ACCOUNT_SUCCESS",
+                    "/integracion/alpaca/accounts/" + accountId,
+                    "Consultar cuenta Alpaca por id",
+                    Map.of("statusHttp", response.getStatusCode().value(), "alpacaAccountId", accountId)
+            ));
+            return body;
 
         } catch (HttpClientErrorException e) {
             String payload = e.getResponseBodyAsString();
             log.error("Alpaca GET error {}: {}", e.getStatusCode(), payload);
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_GET_ACCOUNT_HTTP_ERROR",
+                    "/integracion/alpaca/accounts/" + accountId,
+                    "Error HTTP al consultar cuenta Alpaca",
+                    Map.of("statusHttp", e.getStatusCode().value(), "payload", payload, "alpacaAccountId", accountId)
+            ));
             throw new RuntimeException("Error API Alpaca al consultar cuenta: " + e.getStatusCode() + " - " + payload, e);
 
         } catch (ResourceAccessException e) {
             String msg = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : e.getMessage();
             log.error("Alpaca I/O error (GET): {}", msg);
+            auditSender.log("", new AuditLogRequest(
+                    "ALPACA_GET_ACCOUNT_IO_ERROR",
+                    "/integracion/alpaca/accounts/" + accountId,
+                    "Error de E/S al consultar cuenta Alpaca",
+                    Map.of("mensaje", msg, "alpacaAccountId", accountId)
+            ));
             throw new RuntimeException("No hay conexión con Alpaca (DNS/TLS/firewall): " + msg, e);
         }
     }
