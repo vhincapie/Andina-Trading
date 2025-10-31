@@ -18,6 +18,7 @@ services:
       - servicio-portafolio
       - servicio-notificaciones
       - servicio-auditoria
+      - servicio-respaldo
     networks: [andina]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -248,6 +249,32 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+
+  # === SERVICIO RESPALDO ===
+  servicio-respaldo:
+    build: ./servicio-respaldo
+    container_name: servicio-respaldo
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    volumes:
+      - ./backups:/opt/foresta/backups
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "9091"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - servicio-auditoria
+    restart: unless-stopped
+
 
 # === RED COMPARTIDA ===
 networks:

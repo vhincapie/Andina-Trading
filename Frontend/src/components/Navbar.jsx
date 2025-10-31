@@ -67,8 +67,6 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
             <span className="font-semibold text-gray-900">Foresta Trading</span>
-
-            {/* DESKTOP */}
             <div className="hidden md:flex items-center gap-1 ml-2">
               <NavLink
                 to="/"
@@ -79,8 +77,6 @@ export default function Navbar() {
               >
                 Inicio
               </NavLink>
-
-              {/* --- Inversionista --- */}
               {isAuthenticated && isInvestor && (
                 <>
                   <NavLink
@@ -123,8 +119,6 @@ export default function Navbar() {
                   >
                     Recargar
                   </NavLink>
-
-                  {/* Órdenes (INV) */}
                   <NavLink
                     to="/ordenes/crear"
                     className={({ isActive }) =>
@@ -157,8 +151,6 @@ export default function Navbar() {
                   </NavLink>
                 </>
               )}
-
-              {/* --- Comisionista --- */}
               {isAuthenticated && isComi && (
                 <>
                   <NavLink
@@ -203,8 +195,6 @@ export default function Navbar() {
                   </NavLink>
                 </>
               )}
-
-              {/* --- Admin --- */}
               {isAuthenticated && isAdmin && (
                 <>
                   <NavLink
@@ -217,8 +207,6 @@ export default function Navbar() {
                   >
                     Comisionistas
                   </NavLink>
-
-                  {/* NUEVO: Auditoría */}
                   <NavLink
                     to="/admin/auditoria"
                     className={({ isActive }) =>
@@ -229,14 +217,21 @@ export default function Navbar() {
                   >
                     Auditoría
                   </NavLink>
-
+                  <NavLink
+                    to="/admin/respaldo"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${
+                        isActive ? activeClass : inactiveClass
+                      }`
+                    }
+                  >
+                    Respaldo
+                  </NavLink>
                   <CatalogLinks />
                 </>
               )}
             </div>
           </div>
-
-          {/* Usuario / Autenticación */}
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <>
@@ -272,8 +267,6 @@ export default function Navbar() {
             )}
           </div>
         </div>
-
-        {/* MOBILE */}
         <div className="md:hidden flex gap-1 pb-3 flex-wrap">
           <NavLink
             to="/"
@@ -284,8 +277,6 @@ export default function Navbar() {
           >
             Inicio
           </NavLink>
-
-          {/* --- Inversionista (MOBILE) --- */}
           {isAuthenticated && isInvestor && (
             <>
               <NavLink
@@ -346,8 +337,6 @@ export default function Navbar() {
               </NavLink>
             </>
           )}
-
-          {/* --- Comisionista (MOBILE) --- */}
           {isAuthenticated && isComi && (
             <>
               <NavLink
@@ -384,8 +373,6 @@ export default function Navbar() {
               </NavLink>
             </>
           )}
-
-          {/* --- Admin (MOBILE) --- */}
           {isAuthenticated && isAdmin && (
             <>
               <NavLink
@@ -404,10 +391,17 @@ export default function Navbar() {
               >
                 Auditoría
               </NavLink>
+              <NavLink
+                to="/admin/respaldo"
+                className={({ isActive }) =>
+                  `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                }
+              >
+                Respaldo
+              </NavLink>
               <CatalogLinks />
             </>
           )}
-
           {!isAuthenticated && (
             <>
               <NavLink
