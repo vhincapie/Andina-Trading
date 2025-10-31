@@ -34,12 +34,12 @@ import MisOrdenesComisionistaPage from "./pages/comisionista/MisOrdenesComisioni
 import ResumenComisionesPage from "./pages/comisionista/ResumenComisionesPage";
 
 import AuditoriaLogsPage from "./pages/admin/AuditoriaLogsPage";
+import RespaldoPage from "./pages/admin/RespaldoPage";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Públicas */}
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/registro-inversionista"
@@ -47,12 +47,8 @@ export default function App() {
         />
         <Route path="/recuperar-password" element={<RecoverPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-        {/* Privadas con layout */}
         <Route element={<ProtectedLayout />}>
           <Route index element={<HomePage />} />
-
-          {/* Inversionista */}
           <Route
             path="/perfil"
             element={
@@ -85,8 +81,6 @@ export default function App() {
               </InvestorRoute>
             }
           />
-
-          {/* Órdenes (Inversionista) */}
           <Route
             path="/ordenes/crear"
             element={
@@ -95,7 +89,6 @@ export default function App() {
               </InvestorRoute>
             }
           />
-
           <Route
             path="/ordenes/vender"
             element={
@@ -104,7 +97,6 @@ export default function App() {
               </InvestorRoute>
             }
           />
-
           <Route
             path="/ordenes/mis-ordenes"
             element={
@@ -113,8 +105,6 @@ export default function App() {
               </InvestorRoute>
             }
           />
-
-          {/* Comisionista */}
           <Route
             path="/comisionista/perfil"
             element={
@@ -147,8 +137,6 @@ export default function App() {
               </ComisionistaRoute>
             }
           />
-
-          {/* Admin */}
           <Route
             path="/admin/comisionistas"
             element={
@@ -166,6 +154,14 @@ export default function App() {
             }
           />
           <Route
+            path="/admin/respaldo"
+            element={
+              <AdminRoute allowedRoles={["ADMIN", "ADMINISTRADOR"]}>
+                <RespaldoPage />
+              </AdminRoute>
+            }
+          />
+          <Route
             path="/catalogos"
             element={
               <AdminRoute allowedRoles={["ADMIN", "ADMINISTRADOR"]}>
@@ -178,8 +174,6 @@ export default function App() {
             <Route path="situaciones" element={<SituacionesPage />} />
           </Route>
         </Route>
-
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
