@@ -8,6 +8,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 @RequestMapping("/api/inversionistas")
 public interface IInversionistaController {
 
@@ -29,5 +31,8 @@ public interface IInversionistaController {
 
     @GetMapping("/{id}/alpaca")
     AlpacaAccountDTO alpacaPorId(@PathVariable Long id);
+
+    @GetMapping("/listar")
+    List<InversionistaDTO> listarTodos();
 
 }

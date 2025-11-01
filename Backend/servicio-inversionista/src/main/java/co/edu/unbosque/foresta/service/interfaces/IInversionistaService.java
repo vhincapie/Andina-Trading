@@ -5,10 +5,13 @@ import co.edu.unbosque.foresta.model.DTO.InversionistaRegistroRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.InversionistaUpdateRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.AlpacaAccountDTO;
 
+import java.util.List;
+
 public interface IInversionistaService {
     InversionistaDTO registrar(InversionistaRegistroRequestDTO req);
     InversionistaDTO actualizar(String correoAutenticado, InversionistaUpdateRequestDTO req);
     InversionistaDTO obtenerMiPerfil(String correoAutenticado);
     InversionistaDTO obtenerPorId(Long id);
     AlpacaAccountDTO miAlpaca(String correoAutenticado);
+    List<InversionistaDTO> listarTodos();
 }

@@ -15,4 +15,5 @@ public interface IOrdenService {
     List<OrderDTO> listarPorInversionistaParaComisionista(Long comisionistaId, Long inversionistaId);
     CommissionSummaryDTO resumenComisiones(Long comisionistaId, String from, String to);
     List<PositionDTO> listarMisPosiciones();
+    List<OrderDTO> listarTodos();
 }

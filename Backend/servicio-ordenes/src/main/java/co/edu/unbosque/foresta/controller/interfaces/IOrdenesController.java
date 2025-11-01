@@ -26,4 +26,7 @@ public interface IOrdenesController {
     @GetMapping("/mis-posiciones")
     @PreAuthorize("hasRole('INVERSIONISTA')")
     List<PositionDTO> misPosiciones();
+
+    @GetMapping("/listar")
+    List<OrderDTO> listarTodos();
 }

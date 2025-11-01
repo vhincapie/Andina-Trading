@@ -55,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/ordenes/comisionista/**").hasRole("COMISIONISTA")
 
                         .requestMatchers(HttpMethod.POST, "/api/ordenes").hasRole("INVERSIONISTA")
+                        .requestMatchers(HttpMethod.POST, "/api/ordenes/listar").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,  "/api/ordenes/**").hasRole("INVERSIONISTA")
 
                         .requestMatchers(HttpMethod.GET, "/api/saldo/**").hasRole("INVERSIONISTA")

@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/api/inversionistas/perfil").authenticated()
                         .requestMatchers(HttpMethod.PUT,"/api/inversionistas/actualizar").authenticated()
                         .requestMatchers(HttpMethod.GET,"/api/inversionistas/mi/alpaca").hasRole("INVERSIONISTA")
+                        .requestMatchers(HttpMethod.GET,"/api/inversionistas/listar").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/inversionistas/*").hasAnyRole("INTERNAL","INVERSIONISTA","COMISIONISTA","ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/inversionistas/*/alpaca").hasAnyRole("INTERNAL","INVERSIONISTA","COMISIONISTA","ADMIN")
                         .anyRequest().authenticated()

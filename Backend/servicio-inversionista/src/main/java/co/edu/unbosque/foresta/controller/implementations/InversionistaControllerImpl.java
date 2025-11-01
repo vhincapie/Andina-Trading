@@ -15,6 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 @RestController
 public class InversionistaControllerImpl implements IInversionistaController {
 
@@ -72,6 +74,12 @@ public class InversionistaControllerImpl implements IInversionistaController {
         InversionistaDTO inv = service.obtenerPorId(id);
         if (inv == null) throw new RuntimeException("Inversionista no encontrado");
         return alpacaQuery.getByInversionistaId(id);
+    }
+
+    @Override
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public List<InversionistaDTO> listarTodos() {
+        return service.listarTodos();
     }
 
 }

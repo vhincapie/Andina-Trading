@@ -19,6 +19,7 @@ services:
       - servicio-notificaciones
       - servicio-auditoria
       - servicio-respaldo
+      - servicio-reportes
     networks: [andina]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -275,6 +276,22 @@ services:
       - servicio-auditoria
     restart: unless-stopped
 
+  # === SERVICIO REPORTES ===
+  servicio-reportes:
+    build: ./servicio-reportes
+    container_name: servicio-reportes
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "9092"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
 
 # === RED COMPARTIDA ===
 networks:
