@@ -21,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import co.edu.unbosque.foresta.auth.audit.AuditSender;
 import co.edu.unbosque.foresta.auth.dto.AuditLogRequest;
@@ -137,6 +139,22 @@ public class InversionistaServiceImpl implements IInversionistaService {
                 Map.of("correo", correoAutenticado, "inversionistaId", inv.getId(), "alpacaId", acc.getAlpacaId(), "status", acc.getStatus())
         ));
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<InversionistaDTO> listarTodos() {
+        List<InversionistaDTO> res = repo.findAll()
+                .stream()
+                .map(e -> mm.map(e, InversionistaDTO.class))
+                .collect(Collectors.toList());
+        auditSender.log("", new AuditLogRequest(
+                "INV_LIST_ALL",
+                "/api/inversionistas",
+                "Listar inversionistas",
+                Map.of("total", res.size())
+        ));
+        return res;
     }
 
     private void crearYAsociarCuentaAlpaca(Inversionista inversionista, InversionistaRegistroRequestDTO n) {

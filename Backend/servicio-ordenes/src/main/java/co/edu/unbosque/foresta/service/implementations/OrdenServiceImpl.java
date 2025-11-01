@@ -27,6 +27,7 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class OrdenServiceImpl implements IOrdenService {
@@ -331,6 +332,22 @@ public class OrdenServiceImpl implements IOrdenService {
         dto.setTotal(total);
         dto.setCantidadOrdenes((long) list.size());
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<OrderDTO> listarTodos() {
+        List<OrderDTO> res = repo.findAll()
+                .stream()
+                .map(e -> mm.map(e, OrderDTO.class))
+                .collect(Collectors.toList());
+        auditSender.log("", new AuditLogRequest(
+                "ORD_LIST_ALL",
+                "/api/ordenes",
+                "Listar ordenes",
+                Map.of("total", res.size())
+        ));
+        return res;
     }
 
     private static Instant parseStartOfDayUtc(String yyyyMmDd) {

@@ -5,6 +5,7 @@ import co.edu.unbosque.foresta.model.DTO.OrderCreateRequestDTO;
 import co.edu.unbosque.foresta.model.DTO.OrderDTO;
 import co.edu.unbosque.foresta.model.DTO.PositionDTO;
 import co.edu.unbosque.foresta.service.interfaces.IOrdenService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -30,5 +31,11 @@ public class OrdenesControllerImpl implements IOrdenesController {
     @Override
     public List<PositionDTO> misPosiciones() {
         return service.listarMisPosiciones();
+    }
+
+    @Override
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public List<OrderDTO> listarTodos() {
+        return service.listarTodos();
     }
 }

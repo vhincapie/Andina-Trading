@@ -208,6 +208,14 @@ export default function Navbar() {
                     Comisionistas
                   </NavLink>
                   <NavLink
+                    to="/admin/reportes"
+                    className={({ isActive }) =>
+                      `${linkBaseClass} ${isActive ? activeClass : inactiveClass}`
+                    }
+                  >
+                    Reportes
+                  </NavLink>
+                  <NavLink
                     to="/admin/auditoria"
                     className={({ isActive }) =>
                       `${linkBaseClass} ${
