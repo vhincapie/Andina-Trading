@@ -16,54 +16,35 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
-
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
-        this.jwtFilter = jwtFilter;
-    }
+    public SecurityConfig(JwtAuthenticationFilter jwtFilter) { this.jwtFilter = jwtFilter; }
 
     @Bean
     AuthenticationEntryPoint restEntryPoint() {
         return (req, res, ex) -> {
-            res.setStatus(401);
-            res.setContentType("application/json");
+            res.setStatus(401); res.setContentType("application/json");
             res.getWriter().write("{\"message\":\"No autenticado\",\"status\":401}");
         };
     }
-
     @Bean
     AccessDeniedHandler restDeniedHandler() {
         return (req, res, ex) -> {
-            res.setStatus(403);
-            res.setContentType("application/json");
+            res.setStatus(403); res.setContentType("application/json");
             res.getWriter().write("{\"message\":\"Acceso denegado\",\"status\":403}");
         };
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
+    SecurityFilterChain filter(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(restEntryPoint())
-                        .accessDeniedHandler(restDeniedHandler())
-                )
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(restEntryPoint()).accessDeniedHandler(restDeniedHandler()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/ordenes/listar").hasRole("ADMIN")
-                        .requestMatchers("/api/ordenes/comisionista/**").hasRole("COMISIONISTA")
-                        .requestMatchers(HttpMethod.POST, "/api/ordenes").hasRole("INVERSIONISTA")
-                        .requestMatchers(HttpMethod.GET,  "/api/ordenes/**").hasRole("INVERSIONISTA")
-
-                        .requestMatchers(HttpMethod.GET, "/api/saldo/**").hasRole("INVERSIONISTA")
-                        .requestMatchers(HttpMethod.GET, "/api/mercado/**").hasRole("INVERSIONISTA")
-
+                        .requestMatchers(HttpMethod.GET, "/api/consolidacion/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 }

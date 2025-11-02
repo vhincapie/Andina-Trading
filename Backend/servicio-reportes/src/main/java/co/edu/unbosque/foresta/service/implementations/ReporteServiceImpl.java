@@ -29,11 +29,9 @@ public class ReporteServiceImpl implements IReporteService {
         this.ordClient = ordClient;
     }
 
-    // ==================== INVERSIONISTAS ====================
     @Override
     public void csvInversionistas(OutputStream out) {
         List<InversionistaDTO> data = invClient.listar();
-        // Orden: Apellido, Nombre, ID
         data.sort(Comparator
                 .comparing((InversionistaDTO i) -> nullSafe(i.getApellido()))
                 .thenComparing(i -> nullSafe(i.getNombre()))
@@ -55,11 +53,9 @@ public class ReporteServiceImpl implements IReporteService {
         }
     }
 
-    // ==================== COMISIONISTAS ====================
     @Override
     public void csvComisionistas(OutputStream out) {
         List<ComisionistaDTO> data = comClient.listar();
-        // Orden: Apellido, Nombre, ID
         data.sort(Comparator
                 .comparing((ComisionistaDTO c) -> nullSafe(c.getApellido()))
                 .thenComparing(c -> nullSafe(c.getNombre()))
@@ -82,11 +78,9 @@ public class ReporteServiceImpl implements IReporteService {
         }
     }
 
-    // ==================== ORDENES ====================
     @Override
     public void csvOrdenes(OutputStream out) {
         List<OrdenDTO> data = ordClient.listarTodas();
-        // Orden: createdAt DESC, luego id DESC
         data.sort(Comparator
                 .comparing(OrdenDTO::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed()
                 .thenComparing((OrdenDTO o) -> o.getId() == null ? Long.MIN_VALUE : o.getId()).reversed());
@@ -113,12 +107,10 @@ public class ReporteServiceImpl implements IReporteService {
         }
     }
 
-    // ==================== HELPERS CSV ====================
 
-    /** Escribe BOM + "sep=," para que Excel interprete las columnas correctamente. */
     private static void writeHeader(OutputStream out, String header) {
         writeBom(out);
-        writeUtf8(out, "sep=,\n"); // 👈 fuerza separador de coma en Excel
+        writeUtf8(out, "sep=,\n");
         writeUtf8(out, header);
     }
 

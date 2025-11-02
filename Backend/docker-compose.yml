@@ -20,6 +20,7 @@ services:
       - servicio-auditoria
       - servicio-respaldo
       - servicio-reportes
+      - servicio-consolidacion
     networks: [andina]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -288,6 +289,23 @@ services:
       - 1.1.1.1
     expose:
       - "9092"
+    networks: [ andina ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # === SERVICIO CONSOLIDACION ===
+  servicio-consolidacion:
+    build: ./servicio-consolidacion
+    container_name: servicio-consolidacion
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - JWT_SECRET=${JWT_SECRET}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    expose:
+      - "9093"
     networks: [ andina ]
     extra_hosts:
       - "host.docker.internal:host-gateway"

@@ -4,6 +4,7 @@ import co.edu.unbosque.foresta.controller.interfaces.IBackupController;
 import co.edu.unbosque.foresta.model.DTO.BackupResponseDTO;
 import co.edu.unbosque.foresta.service.interfaces.IBackupService;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
@@ -20,24 +21,28 @@ public class BackupController implements IBackupController {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BackupResponseDTO> backupDb(String db) throws Exception {
         String file = service.backupOne(db);
         return ResponseEntity.ok(new BackupResponseDTO(true, file));
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BackupResponseDTO> backupAll() throws Exception {
         List<String> files = service.backupAll();
         return ResponseEntity.ok(new BackupResponseDTO(true, files));
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BackupResponseDTO> list() throws Exception {
         List<String> files = service.listFiles();
         return ResponseEntity.ok(new BackupResponseDTO(true, files));
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<byte[]> download(String filename) throws Exception {
         File f = service.resolve(filename);
         byte[] bytes = Files.readAllBytes(f.toPath());
@@ -47,6 +52,7 @@ public class BackupController implements IBackupController {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BackupResponseDTO> zip(List<String> files) throws Exception {
         String zip = service.zip("respaldo-" + System.currentTimeMillis(), files);
         return ResponseEntity.ok(new BackupResponseDTO(true, zip));

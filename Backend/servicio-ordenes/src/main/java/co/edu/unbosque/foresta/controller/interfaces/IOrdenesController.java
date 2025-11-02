@@ -28,5 +28,6 @@ public interface IOrdenesController {
     List<PositionDTO> misPosiciones();
 
     @GetMapping("/listar")
+    @PreAuthorize("hasRole('ADMIN')")
     List<OrderDTO> listarTodos();
 }
