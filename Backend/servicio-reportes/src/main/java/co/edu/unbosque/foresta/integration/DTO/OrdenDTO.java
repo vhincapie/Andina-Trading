@@ -1,134 +1,94 @@
 package co.edu.unbosque.foresta.integration.DTO;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class OrdenDTO {
-    private Long id;
+
+    private String id;
+
     private String symbol;
-    private String side;         // BUY/SELL
-    private String orderType;    // MARKET/LIMIT...
-    private String status;       // filled, new, canceled, etc.
+    private String side;
+    private String orderType;
+    private String status;
+
     private BigDecimal qty;
+
     private BigDecimal limitPrice;
     private BigDecimal stopPrice;
     private BigDecimal transactionAmount;
     private BigDecimal commissionAmount;
     private BigDecimal netAmount;
-    private LocalDateTime createdAt;
+    private BigDecimal unitPrice;
+
+    private String timeInForce;
+    private String moneda;
+
+    @JsonProperty("creadoEn")
+    private OffsetDateTime createdAt;
+
+    @JsonProperty("actualizadoEn")
+    private OffsetDateTime updatedAt;
+
     private Long inversionistaId;
     private Long comisionistaId;
 
     // getters/setters
-    public Long getId() {
-        return id;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getSymbol() { return symbol; }
+    public void setSymbol(String symbol) { this.symbol = symbol; }
 
-    public String getSymbol() {
-        return symbol;
-    }
+    public String getSide() { return side; }
+    public void setSide(String side) { this.side = side; }
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
+    public String getOrderType() { return orderType; }
+    public void setOrderType(String orderType) { this.orderType = orderType; }
 
-    public String getSide() {
-        return side;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public void setSide(String side) {
-        this.side = side;
-    }
+    public BigDecimal getQty() { return qty; }
+    public void setQty(BigDecimal qty) { this.qty = qty; }
 
-    public String getOrderType() {
-        return orderType;
-    }
+    public BigDecimal getLimitPrice() { return limitPrice; }
+    public void setLimitPrice(BigDecimal limitPrice) { this.limitPrice = limitPrice; }
 
-    public void setOrderType(String orderType) {
-        this.orderType = orderType;
-    }
+    public BigDecimal getStopPrice() { return stopPrice; }
+    public void setStopPrice(BigDecimal stopPrice) { this.stopPrice = stopPrice; }
 
-    public String getStatus() {
-        return status;
-    }
+    public BigDecimal getTransactionAmount() { return transactionAmount; }
+    public void setTransactionAmount(BigDecimal transactionAmount) { this.transactionAmount = transactionAmount; }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public BigDecimal getCommissionAmount() { return commissionAmount; }
+    public void setCommissionAmount(BigDecimal commissionAmount) { this.commissionAmount = commissionAmount; }
 
-    public BigDecimal getQty() {
-        return qty;
-    }
+    public BigDecimal getNetAmount() { return netAmount; }
+    public void setNetAmount(BigDecimal netAmount) { this.netAmount = netAmount; }
 
-    public void setQty(BigDecimal qty) {
-        this.qty = qty;
-    }
+    public BigDecimal getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
 
-    public BigDecimal getLimitPrice() {
-        return limitPrice;
-    }
+    public String getTimeInForce() { return timeInForce; }
+    public void setTimeInForce(String timeInForce) { this.timeInForce = timeInForce; }
 
-    public void setLimitPrice(BigDecimal limitPrice) {
-        this.limitPrice = limitPrice;
-    }
+    public String getMoneda() { return moneda; }
+    public void setMoneda(String moneda) { this.moneda = moneda; }
 
-    public BigDecimal getStopPrice() {
-        return stopPrice;
-    }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setStopPrice(BigDecimal stopPrice) {
-        this.stopPrice = stopPrice;
-    }
+    public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public BigDecimal getTransactionAmount() {
-        return transactionAmount;
-    }
+    public Long getInversionistaId() { return inversionistaId; }
+    public void setInversionistaId(Long inversionistaId) { this.inversionistaId = inversionistaId; }
 
-    public void setTransactionAmount(BigDecimal transactionAmount) {
-        this.transactionAmount = transactionAmount;
-    }
-
-    public BigDecimal getCommissionAmount() {
-        return commissionAmount;
-    }
-
-    public void setCommissionAmount(BigDecimal commissionAmount) {
-        this.commissionAmount = commissionAmount;
-    }
-
-    public BigDecimal getNetAmount() {
-        return netAmount;
-    }
-
-    public void setNetAmount(BigDecimal netAmount) {
-        this.netAmount = netAmount;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Long getInversionistaId() {
-        return inversionistaId;
-    }
-
-    public void setInversionistaId(Long inversionistaId) {
-        this.inversionistaId = inversionistaId;
-    }
-
-    public Long getComisionistaId() {
-        return comisionistaId;
-    }
-
-    public void setComisionistaId(Long comisionistaId) {
-        this.comisionistaId = comisionistaId;
-    }
+    public Long getComisionistaId() { return comisionistaId; }
+    public void setComisionistaId(Long comisionistaId) { this.comisionistaId = comisionistaId; }
 }

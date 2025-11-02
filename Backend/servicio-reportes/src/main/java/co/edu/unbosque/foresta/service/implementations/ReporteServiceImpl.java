@@ -41,7 +41,6 @@ public class ReporteServiceImpl implements IReporteService {
         this.catClient = catClient;
     }
 
-    // ==================== INVERSIONISTAS ====================
     @Override
     public void csvInversionistas(OutputStream out) {
         List<InversionistaDTO> data = invClient.listar();
@@ -66,7 +65,6 @@ public class ReporteServiceImpl implements IReporteService {
         }
     }
 
-    // ==================== COMISIONISTAS ====================
     @Override
     public void csvComisionistas(OutputStream out) {
         List<ComisionistaDTO> data = comClient.listar();
@@ -92,13 +90,20 @@ public class ReporteServiceImpl implements IReporteService {
         }
     }
 
-    // ==================== ORDENES ====================
     @Override
     public void csvOrdenes(OutputStream out) {
         List<OrdenDTO> data = ordClient.listarTodas();
-        data.sort(Comparator
-                .comparing(OrdenDTO::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed()
-                .thenComparing((OrdenDTO o) -> o.getId() == null ? Long.MIN_VALUE : o.getId()).reversed());
+
+        data.sort(
+                Comparator
+                        .comparing(OrdenDTO::getCreatedAt,
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .reversed()
+                        .thenComparing(
+                                o -> o.getId() == null ? "" : o.getId(),
+                                Comparator.reverseOrder()
+                        )
+        );
 
         writeHeader(out, "id,created_at,symbol,side,order_type,status,qty,limit_price,stop_price,transaction_amount,commission_amount,net_amount,inversionista,comisionista\n");
 
@@ -108,7 +113,10 @@ public class ReporteServiceImpl implements IReporteService {
 
             line(out,
                     o.getId(),
-                    o.getCreatedAt() == null ? "" : TS.format(o.getCreatedAt()),
+                    o.getCreatedAt() == null ? "" :
+                            o.getCreatedAt().atZoneSameInstant(java.time.ZoneId.of("America/Bogota"))
+                                    .toLocalDateTime()
+                                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     o.getSymbol(),
                     o.getSide(),
                     o.getOrderType(),
@@ -124,8 +132,6 @@ public class ReporteServiceImpl implements IReporteService {
             );
         }
     }
-
-    // ==================== HELPERS CSV ====================
 
     private static void writeHeader(OutputStream out, String header) {
         writeBom(out);
@@ -156,10 +162,7 @@ public class ReporteServiceImpl implements IReporteService {
         String v = s.replace("\"", "\"\"");
         return needs ? "\"" + v + "\"" : v;
     }
-
-    // ==================== HELPERS NOMBRES ====================
-
-    private String nombrePais(Long id) {
+     private String nombrePais(Long id) {
         if (id == null) return "";
         return paisCache.computeIfAbsent(id, key -> {
             try { PaisLiteDTO p = catClient.obtenerPais(key); return p != null ? nullSafe(p.getNombre()) : ""; }
