@@ -25,14 +25,38 @@ export default function CuentaBancariaPage() {
   );
   const bancos = useMemo(() => bancosPorPais[pais] || [], [pais]);
 
+  const traducirMensaje = (msg) => {
+    if (!msg) return "";
+    return msg
+      .replace(/accountOwnerName/gi, "Nombre del titular")
+      .replace(/nickname/gi, "Banco o alias")
+      .replace(/bankAccountNumber/gi, "Número de cuenta")
+      .replace(/bankAccountType/gi, "Tipo de cuenta")
+      .replace(/country/gi, "País");
+  };
+
+  const getErrMsg = (err) => {
+    const msg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      (Array.isArray(err?.response?.data?.errors) &&
+        err.response.data.errors[0]?.message) ||
+      (typeof err?.response?.data === "string" ? err.response.data : "") ||
+      err?.message ||
+      "Ocurrió un error";
+    return traducirMensaje(msg);
+  };
+
   const loadList = async () => {
     setLoading(true);
     setError("");
     try {
       const data = await obtenerRelacionesACH();
       setList(Array.isArray(data) ? data : []);
-    } catch {
-      setError("No se pudieron cargar las cuentas asociadas.");
+    } catch (err) {
+      setError(
+        getErrMsg(err) || "No se pudieron cargar las cuentas asociadas."
+      );
     } finally {
       setLoading(false);
     }
@@ -80,7 +104,7 @@ export default function CuentaBancariaPage() {
       setNickname("");
       await loadList();
     } catch (err) {
-      setError("No se pudo asociar la cuenta bancaria.");
+      setError(getErrMsg(err) || "No se pudo asociar la cuenta bancaria.");
     }
   };
 

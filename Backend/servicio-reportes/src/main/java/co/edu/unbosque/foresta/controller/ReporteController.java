@@ -33,7 +33,6 @@ public class ReporteController {
         stream(res, service::csvOrdenes);
     }
 
-    // ------- helpers -------
     private void setCsvHeaders(HttpServletResponse res, String baseName) {
         res.setContentType("text/csv; charset=UTF-8");
         res.setHeader("Content-Disposition", "attachment; filename=\"" + baseName + ".csv\"");
