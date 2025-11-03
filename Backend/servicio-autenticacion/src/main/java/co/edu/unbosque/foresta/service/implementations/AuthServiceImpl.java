@@ -307,6 +307,7 @@ public class AuthServiceImpl implements IAuthService {
 
     private void actualizarContrasenaYMarcarTokenUsado(Usuario usuario, PasswordResetToken pr, String nuevaContrasena) {
         usuario.setContrasenaHash(encriptador.encode(nuevaContrasena));
+        usuario.setIntentosFallidos(0);
         usuarioRepo.save(usuario);
         pr.setUsado(true);
         resetRepo.save(pr);

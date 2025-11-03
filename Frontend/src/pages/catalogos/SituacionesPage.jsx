@@ -71,59 +71,73 @@ export default function SituacionesEconomicasPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Situaciones Económicas</h2>
+    <div className="min-h-[100dvh] bg-slate-950 text-slate-100">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          Situaciones Económicas
+        </h2>
+        <div className="mt-2 h-0.5 w-20 bg-emerald-400/80 rounded mb-4"></div>
 
-      <form
-        onSubmit={onSubmit}
-        className="border rounded p-4 space-y-3 bg-white"
-      >
-        <h3 className="font-semibold">Crear situación económica</h3>
-
-        <ErrorAlert message={error} onClose={() => setError("")} />
-        <SuccessAlert message={ok} onClose={() => setOk("")} />
-
-        <div className="grid gap-3">
-          <input
-            className="border p-2 rounded"
-            placeholder="Nombre"
-            value={form.nombre}
-            onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-            required
-          />
-          <textarea
-            className="border p-2 rounded"
-            placeholder="Descripción (opcional)"
-            rows={3}
-            value={form.descripcion}
-            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-          />
-        </div>
-
-        <button
-          className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50"
-          disabled={submitting}
+        <form
+          onSubmit={onSubmit}
+          className="rounded-2xl border border-slate-800 bg-slate-900/50 ring-1 ring-white/5 backdrop-blur p-5 space-y-4"
         >
-          {submitting ? "Creando..." : "Crear"}
-        </button>
-      </form>
+          <h3 className="text-lg font-semibold text-slate-100">
+            Crear situación económica
+          </h3>
 
-      <div className="bg-white border rounded p-4">
-        <h3 className="font-semibold mb-2">Listado</h3>
-        {loading ? (
-          <p className="text-gray-600">Cargando...</p>
-        ) : (
-          <ul className="space-y-2">
-            {items.map((s) => (
-              <li key={s.id} className="border rounded p-2">
-                <div className="font-medium">{s.nombre}</div>
-                {s.descripcion && (
-                  <div className="text-sm text-gray-600">{s.descripcion}</div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+          <ErrorAlert message={error} onClose={() => setError("")} />
+          <SuccessAlert message={ok} onClose={() => setOk("")} />
+
+          <div className="grid gap-4">
+            <input
+              className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+              placeholder="Nombre"
+              value={form.nombre}
+              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+              required
+            />
+            <textarea
+              className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+              placeholder="Descripción (opcional)"
+              rows={3}
+              value={form.descripcion}
+              onChange={(e) =>
+                setForm({ ...form, descripcion: e.target.value })
+              }
+            />
+          </div>
+
+          <button
+            className="inline-flex items-center justify-center rounded-lg px-5 py-2.5 bg-emerald-500/90 hover:bg-emerald-500 text-white font-medium shadow-sm disabled:opacity-60 transition"
+            disabled={submitting}
+          >
+            {submitting ? "Creando..." : "Crear"}
+          </button>
+        </form>
+
+        <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 ring-1 ring-white/5 backdrop-blur p-5">
+          <h3 className="text-lg font-semibold text-slate-100 mb-3">Listado</h3>
+          {loading ? (
+            <p className="text-slate-400">Cargando...</p>
+          ) : (
+            <ul className="space-y-2">
+              {items.map((s) => (
+                <li
+                  key={s.id}
+                  className="rounded-xl ring-1 ring-slate-800 bg-slate-950/60 p-3 hover:bg-slate-900/40 transition"
+                >
+                  <div className="font-medium text-slate-100">{s.nombre}</div>
+                  {s.descripcion && (
+                    <div className="text-sm text-slate-400">
+                      {s.descripcion}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

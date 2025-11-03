@@ -17,22 +17,22 @@ export default function CandlesChart({ dataBySymbol = {}, height = 420 }) {
         textColor: "#D1D5DB",
       },
       grid: {
-        vertLines: { color: "rgba(197,203,206,0.1)" },
-        horzLines: { color: "rgba(197,203,206,0.1)" },
+        vertLines: { color: "rgba(203,213,225,0.08)" },
+        horzLines: { color: "rgba(203,213,225,0.08)" },
       },
       crosshair: { mode: 1 },
       rightPriceScale: { borderVisible: false },
-      timeScale: { rightOffset: 6, barSpacing: 12 },
+      timeScale: { rightOffset: 6, barSpacing: 12, borderVisible: false },
     });
     chartRef.current = chart;
 
     candleRef.current = chart.addCandlestickSeries({
-      upColor: "#26a69a",
-      downColor: "#ef5350",
-      borderUpColor: "#26a69a",
-      borderDownColor: "#ef5350",
-      wickUpColor: "#26a69a",
-      wickDownColor: "#ef5350",
+      upColor: "#10b981",
+      downColor: "#ef4444",
+      borderUpColor: "#10b981",
+      borderDownColor: "#ef4444",
+      wickUpColor: "#10b981",
+      wickDownColor: "#ef4444",
     });
 
     const ro = new ResizeObserver(() =>
@@ -91,7 +91,7 @@ export default function CandlesChart({ dataBySymbol = {}, height = 420 }) {
   return (
     <div
       ref={containerRef}
-      className="w-full"
+      className="w-full rounded-xl border border-slate-800 bg-slate-900/60 ring-1 ring-white/5 shadow-lg overflow-hidden"
       style={{ height, minHeight: height }}
     />
   );

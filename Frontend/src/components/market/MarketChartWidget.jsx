@@ -67,18 +67,24 @@ export default function MarketChartWidget({
   }, [selected, dataBySymbol]);
 
   return (
-    <div className="bg-white border rounded p-2">
-      <div className="flex items-center justify-between px-2 py-1 gap-2">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold">Mercado</h3>
+    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl ring-1 ring-white/5 shadow-xl p-3 sm:p-4 text-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1 py-1">
+        <div className="flex items-center gap-3">
+          <h3 className="font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+            Chart de Trading
+          </h3>
           {parsedSymbols.length > 1 && (
             <select
-              className="border rounded px-2 py-1 text-sm"
+              className="border border-slate-700 rounded-lg bg-slate-900/70 px-2.5 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-400/40"
               value={selected}
               onChange={(e) => setSelected(e.target.value)}
             >
               {parsedSymbols.map((s) => (
-                <option key={s} value={s}>
+                <option
+                  key={s}
+                  value={s}
+                  className="bg-slate-900 text-slate-100"
+                >
                   {s}
                 </option>
               ))}
@@ -86,8 +92,12 @@ export default function MarketChartWidget({
           )}
         </div>
       </div>
+
       <ErrorAlert message={err} onClose={() => setErr("")} />
-      <CandlesChart dataBySymbol={singleData} height={height} />
+
+      <div className="mt-2">
+        <CandlesChart dataBySymbol={singleData} height={height} />
+      </div>
     </div>
   );
 }

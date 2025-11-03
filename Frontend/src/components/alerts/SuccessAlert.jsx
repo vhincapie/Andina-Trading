@@ -3,14 +3,14 @@ export default function SuccessAlert({ message, onClose }) {
 
   return (
     <div
-      className="rounded border border-green-300 bg-green-50 text-green-800 px-3 py-2 relative"
-      style={{ marginBottom: "8px" }}
+      className="relative rounded-2xl border border-emerald-800/50 bg-emerald-900/40 text-emerald-300 px-4 py-3 shadow-lg ring-1 ring-white/10 backdrop-blur"
+      style={{ marginBottom: "10px" }}
     >
-      <span>{message}</span>
+      <span className="block text-sm font-medium">{message}</span>
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute right-2 top-1 text-green-600 hover:text-green-800"
+          className="absolute right-3 top-2 text-emerald-400 hover:text-emerald-200 transition-colors text-lg leading-none"
         >
           ×
         </button>

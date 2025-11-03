@@ -1,4 +1,3 @@
-// src/api/consolidacionApi.js
 import axios from "axios";
 
 const consolidacionApi = axios.create({

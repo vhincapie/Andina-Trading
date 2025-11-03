@@ -2,13 +2,13 @@ export const bancosPorPais = {
   CO: [
     { id: "bcol", nombre: "Bancolombia" },
     { id: "bpop", nombre: "Banco Popular" },
-    { id: "bbog", nombre: "Banco de Bogotá" },
+    { id: "bbog", nombre: "Banco de Bogota" },
     { id: "bocc", nombre: "Banco de Occidente" },
     { id: "dav", nombre: "Davivienda" },
   ],
   EC: [
     { id: "pich", nombre: "Banco Pichincha" },
-    { id: "pac", nombre: "Banco del Pacífico" },
+    { id: "pac", nombre: "Banco del Pacifico" },
     { id: "prod", nombre: "Produbanco" },
   ],
   VE: [

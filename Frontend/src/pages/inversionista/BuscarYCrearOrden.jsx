@@ -17,12 +17,10 @@ function useDebounced(value, delay = 400) {
 }
 
 export default function BuscarYCrearOrden() {
-
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
-
 
   const [qty, setQty] = useState("");
   const [side, setSide] = useState("buy");
@@ -144,189 +142,208 @@ export default function BuscarYCrearOrden() {
     }
   };
 
+  const shell = "min-h-[100dvh] bg-slate-950 text-slate-100";
+  const wrap = "max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8";
+  const panel =
+    "bg-slate-900/50 border border-slate-800 rounded-2xl shadow-xl ring-1 ring-white/5 backdrop-blur p-6 md:p-7";
+  const label = "block text-xs uppercase tracking-wide text-slate-400 mb-1.5";
+  const input =
+    "w-full bg-slate-900/60 border border-slate-700/70 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-400/40";
+  const btnPrimary =
+    "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-60";
+  const badgeBase =
+    "text-xs px-2.5 py-1 rounded-full border backdrop-blur ring-1 ring-white/10";
+
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
-      <header className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Órdenes — Inversionista</h2>
-        <span
-          className={`text-sm px-2 py-1 rounded ${
-            marketOpen === null
-              ? "bg-gray-200 text-gray-700"
-              : marketOpen
-              ? "bg-green-100 text-green-700"
-              : "bg-yellow-100 text-yellow-800"
-          }`}
-        >
-          {marketOpen === null
-            ? "Consultando mercado…"
-            : marketOpen
-            ? "Mercado abierto"
-            : "Mercado cerrado"}
-        </span>
-      </header>
-
-      <ErrorAlert message={err} onClose={() => setErr("")} />
-      <SuccessAlert message={ok} onClose={() => setOk("")} />
-
-      {/* Buscador */}
-      <section className="bg-white border rounded p-4 space-y-3">
-        <label className="block text-sm mb-1">Buscar (símbolo o nombre)</label>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="AAPL, Tesla, Nasdaq…"
-          className="border p-2 rounded w-full"
-        />
-
-        {/* Resultados */}
-        <div className="max-h-72 overflow-auto border rounded">
-          {loading ? (
-            <div className="p-3 text-sm text-gray-600">Buscando…</div>
-          ) : results.length === 0 ? (
-            <div className="p-3 text-sm text-gray-500">Sin resultados.</div>
-          ) : (
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left p-2">Símbolo</th>
-                  <th className="text-left p-2">Nombre</th>
-                  <th className="text-right p-2">Precio</th>
-                  <th className="p-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r) => (
-                  <tr key={r.symbol} className="border-t">
-                    <td className="p-2 font-mono">{r.symbol}</td>
-                    <td className="p-2">{r.description}</td>
-                    <td className="p-2 text-right">
-                      {Number(r.currentPrice || 0).toFixed(2)}
-                    </td>
-                    <td className="p-2 text-right">
-                      <button
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded"
-                        onClick={() => onSelect(r)}
-                      >
-                        Seleccionar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
-
-      {/* Formulario de orden */}
-      <section className="bg-white border rounded p-4">
-        <h3 className="font-semibold mb-2">Nueva orden</h3>
-
-        {selected ? (
-          <div className="mb-3 text-sm">
-            <span className="font-mono font-semibold">{selected.symbol}</span>{" "}
-            — {selected.description} — Último:{" "}
-            <span className="font-semibold">
-              {Number(selected.currentPrice || 0).toFixed(2)}
-            </span>
-          </div>
-        ) : (
-          <div className="mb-3 text-sm text-gray-600">
-            Selecciona primero un instrumento.
-          </div>
-        )}
-
-        <form onSubmit={onCreate} className="grid gap-3 md:grid-cols-2">
+    <div className={shell}>
+      <div className={wrap}>
+        <header className="flex items-end justify-between mb-4">
           <div>
-            <label className="block text-sm mb-1">Cantidad</label>
+            <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Órdenes — Inversionista
+            </h2>
+            <div className="mt-2 h-0.5 w-24 bg-emerald-400/80 rounded"></div>
+          </div>
+
+          <span
+            className={`${badgeBase} ${
+              marketOpen === null
+                ? "bg-slate-800/60 border-slate-700 text-slate-300"
+                : marketOpen
+                ? "bg-emerald-400/10 border-emerald-500/30 text-emerald-300"
+                : "bg-amber-400/10 border-amber-500/30 text-amber-300"
+            }`}
+          >
+            {marketOpen === null
+              ? "Consultando mercado…"
+              : marketOpen
+              ? "Mercado abierto"
+              : "Mercado cerrado"}
+          </span>
+        </header>
+
+        <ErrorAlert message={err} onClose={() => setErr("")} />
+        <SuccessAlert message={ok} onClose={() => setOk("")} />
+
+        <section className={`${panel} space-y-4 mt-4`}>
+          <div>
+            <label className={label}>Buscar (símbolo o nombre)</label>
             <input
-              className="border p-2 rounded w-full"
-              inputMode="numeric"
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              disabled={!selected}
-              required
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="AAPL, Tesla, Nasdaq…"
+              className={input}
             />
           </div>
 
-          <div>
-            <label className="block text-sm mb-1">Lado</label>
-            <select
-              className="border p-2 rounded w-full"
-              value={side}
-              onChange={(e) => setSide(e.target.value)}
-              disabled={!selected}
-            >
-              <option value="buy">Comprar</option>
-            </select>
+          <div className="max-h-80 overflow-auto rounded-xl border border-slate-800">
+            {loading ? (
+              <div className="p-3 text-sm text-slate-300">Buscando…</div>
+            ) : results.length === 0 ? (
+              <div className="p-3 text-sm text-slate-400">Sin resultados.</div>
+            ) : (
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-900/60 sticky top-0">
+                  <tr className="text-slate-300">
+                    <th className="text-left p-3 font-medium">Símbolo</th>
+                    <th className="text-left p-3 font-medium">Nombre</th>
+                    <th className="text-right p-3 font-medium">Precio</th>
+                    <th className="p-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {results.map((r) => (
+                    <tr key={r.symbol} className="hover:bg-slate-900/40">
+                      <td className="p-3 font-mono text-slate-100">
+                        {r.symbol}
+                      </td>
+                      <td className="p-3">{r.description}</td>
+                      <td className="p-3 text-right">
+                        {Number(r.currentPrice || 0).toFixed(2)}
+                      </td>
+                      <td className="p-3 text-right">
+                        <button
+                          className="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg border border-slate-700"
+                          onClick={() => onSelect(r)}
+                        >
+                          Seleccionar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
+        </section>
 
-          <div>
-            <label className="block text-sm mb-1">Tipo</label>
-            <select
-              className="border p-2 rounded w-full"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              disabled={!selected}
-            >
-              <option value="market">Market</option>
-              <option value="limit">Limit</option>
-              <option value="stop">Stop</option>
-              <option value="stop_limit">Stop Limit</option>
-            </select>
-          </div>
+        <section className={`${panel} mt-6`}>
+          <h3 className="font-semibold mb-4 text-slate-200">Nueva orden</h3>
 
-          <div>
-            <label className="block text-sm mb-1">Time in Force</label>
-            <select
-              className="border p-2 rounded w-full"
-              value={timeInForce}
-              onChange={(e) => setTimeInForce(e.target.value)}
-              disabled={!selected}
-            >
-              <option value="day">DAY</option>
-            </select>
-          </div>
+          {selected ? (
+            <div className="mb-4 text-sm text-slate-300">
+              <span className="font-mono font-semibold text-slate-100">
+                {selected.symbol}
+              </span>{" "}
+              — {selected.description} — Último:{" "}
+              <span className="font-semibold text-emerald-300">
+                {Number(selected.currentPrice || 0).toFixed(2)}
+              </span>
+            </div>
+          ) : (
+            <div className="mb-4 text-sm text-slate-400">
+              Selecciona primero un instrumento.
+            </div>
+          )}
 
-          {needsLimit && (
+          <form onSubmit={onCreate} className="grid gap-5 md:grid-cols-2">
             <div>
-              <label className="block text-sm mb-1">Limit Price</label>
+              <label className={label}>Cantidad</label>
               <input
-                className="border p-2 rounded w-full"
-                inputMode="decimal"
-                value={limitPrice}
-                onChange={(e) => setLimitPrice(e.target.value)}
+                className={input}
+                inputMode="numeric"
+                value={qty}
+                onChange={(e) => setQty(e.target.value)}
                 disabled={!selected}
                 required
               />
             </div>
-          )}
 
-          {needsStop && (
             <div>
-              <label className="block text-sm mb-1">Stop Price</label>
-              <input
-                className="border p-2 rounded w-full"
-                inputMode="decimal"
-                value={stopPrice}
-                onChange={(e) => setStopPrice(e.target.value)}
+              <label className={label}>Lado</label>
+              <select
+                className={input}
+                value={side}
+                onChange={(e) => setSide(e.target.value)}
                 disabled={!selected}
-                required
-              />
+              >
+                <option value="buy">Comprar</option>
+              </select>
             </div>
-          )}
 
-          <div className="md:col-span-2">
-            <button
-              type="submit"
-              className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-60"
-              disabled={!selected}
-            >
-              Crear orden (enviar a comisionista)
-            </button>
-          </div>
-        </form>
-      </section>
+            <div>
+              <label className={label}>Tipo</label>
+              <select
+                className={input}
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                disabled={!selected}
+              >
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
+                <option value="stop">Stop</option>
+                <option value="stop_limit">Stop Limit</option>
+              </select>
+            </div>
+
+            <div>
+              <label className={label}>Time in Force</label>
+              <select
+                className={input}
+                value={timeInForce}
+                onChange={(e) => setTimeInForce(e.target.value)}
+                disabled={!selected}
+              >
+                <option value="day">DAY</option>
+              </select>
+            </div>
+
+            {needsLimit && (
+              <div>
+                <label className={label}>Limit Price</label>
+                <input
+                  className={input}
+                  inputMode="decimal"
+                  value={limitPrice}
+                  onChange={(e) => setLimitPrice(e.target.value)}
+                  disabled={!selected}
+                  required
+                />
+              </div>
+            )}
+
+            {needsStop && (
+              <div>
+                <label className={label}>Stop Price</label>
+                <input
+                  className={input}
+                  inputMode="decimal"
+                  value={stopPrice}
+                  onChange={(e) => setStopPrice(e.target.value)}
+                  disabled={!selected}
+                  required
+                />
+              </div>
+            )}
+
+            <div className="md:col-span-2 pt-2">
+              <button type="submit" className={btnPrimary} disabled={!selected}>
+                Crear orden
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
     </div>
   );
 }
