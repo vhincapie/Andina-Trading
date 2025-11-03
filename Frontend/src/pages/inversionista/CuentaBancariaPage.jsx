@@ -108,102 +108,119 @@ export default function CuentaBancariaPage() {
     }
   };
 
+  const shell = "min-h-[100dvh] bg-slate-950 text-slate-100";
+  const wrap = "max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8";
+  const heading =
+    "text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent";
+  const panel =
+    "bg-slate-900/50 border border-slate-800 rounded-2xl shadow-xl ring-1 ring-white/5 backdrop-blur p-6 md:p-7";
+  const label = "block text-xs uppercase tracking-wide text-slate-400 mb-1";
+  const input =
+    "w-full bg-slate-900/60 border border-slate-700/70 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-400/40";
+  const btnPrimary =
+    "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg transition-colors disabled:opacity-60";
+
   return (
-    <div className="max-w-3xl mx-auto py-6 space-y-6">
-      <h2 className="text-2xl font-semibold">Cuenta bancaria</h2>
+    <div className={shell}>
+      <div className={wrap}>
+        <h2 className={heading}>Cuenta bancaria</h2>
+        <div className="mt-2 h-0.5 w-20 bg-emerald-400/80 rounded mb-4" />
 
-      <ErrorAlert message={error} onClose={() => setError("")} />
-      <SuccessAlert message={ok} onClose={() => setOk("")} />
+        <div className="max-w-5xl mb-4">
+          <ErrorAlert message={error} onClose={() => setError("")} />
+          <SuccessAlert message={ok} onClose={() => setOk("")} />
+        </div>
 
-      {loading ? (
-        <p className="text-gray-600">Cargando...</p>
-      ) : yaTieneCuenta ? (
-        <RelacionesACHList items={list.slice(0, 1)} />
-      ) : (
-        <>
-          <form
-            onSubmit={onSubmit}
-            className="bg-white border rounded p-4 space-y-3"
-          >
-            <div>
-              <label className="block text-sm mb-1">Titular</label>
-              <input
-                className="border p-2 rounded w-full"
-                value={titular}
-                onChange={(e) => setTitular(e.target.value)}
-                required
-              />
+        {loading ? (
+          <p className="text-slate-300">Cargando...</p>
+        ) : yaTieneCuenta ? (
+          <RelacionesACHList items={list.slice(0, 1)} />
+        ) : (
+          <>
+            <form onSubmit={onSubmit} className={`${panel} space-y-4`}>
+              <div>
+                <label className={label}>Titular</label>
+                <input
+                  className={input}
+                  value={titular}
+                  onChange={(e) => setTitular(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label className={label}>País</label>
+                  <select
+                    className={input}
+                    value={pais}
+                    onChange={(e) => setPais(e.target.value)}
+                  >
+                    <option value="CO">Colombia</option>
+                    <option value="EC">Ecuador</option>
+                    <option value="VE">Venezuela</option>
+                    <option value="US">Estados Unidos</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={label}>Banco</label>
+                  <select
+                    className={input}
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    required
+                  >
+                    <option value="">Selecciona un banco…</option>
+                    {bancos.map((b) => (
+                      <option key={b.id} value={b.nombre}>
+                        {b.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label className={label}>Número de cuenta</label>
+                  <input
+                    className={input}
+                    value={numeroCuenta}
+                    onChange={onChangeNumero}
+                    inputMode="numeric"
+                    pattern="[0-9]{8}"
+                    maxLength={8}
+                    placeholder="8 dígitos"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className={label}>Tipo de cuenta</label>
+                  <select
+                    className={input}
+                    value={tipoCuenta}
+                    onChange={(e) => setTipoCuenta(e.target.value)}
+                    required
+                  >
+                    <option value="CHECKING">Corriente</option>
+                    <option value="SAVINGS">Ahorros</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" className={btnPrimary}>
+                Asociar cuenta
+              </button>
+            </form>
+
+            <div className="mt-6">
+              <RelacionesACHList items={list} />
             </div>
-
-            <div>
-              <label className="block text-sm mb-1">País</label>
-              <select
-                className="border p-2 rounded w-full"
-                value={pais}
-                onChange={(e) => setPais(e.target.value)}
-              >
-                <option value="CO">Colombia</option>
-                <option value="EC">Ecuador</option>
-                <option value="VE">Venezuela</option>
-                <option value="US">Estados Unidos</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1">Banco</label>
-              <select
-                className="border p-2 rounded w-full"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                required
-              >
-                <option value="">Selecciona un banco…</option>
-                {bancos.map((b) => (
-                  <option key={b.id} value={b.nombre}>
-                    {b.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1">Número de cuenta</label>
-              <input
-                className="border p-2 rounded w-full"
-                value={numeroCuenta}
-                onChange={onChangeNumero}
-                inputMode="numeric"
-                pattern="[0-9]{8}"
-                maxLength={8}
-                placeholder="8 dígitos"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1">Tipo de cuenta</label>
-              <select
-                className="border p-2 rounded w-full"
-                value={tipoCuenta}
-                onChange={(e) => setTipoCuenta(e.target.value)}
-                required
-              >
-                <option value="CHECKING">Corriente</option>
-                <option value="SAVINGS">Ahorros</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-3 py-2 rounded"
-            >
-              Asociar cuenta
-            </button>
-          </form>
-
-          <RelacionesACHList items={list} />
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

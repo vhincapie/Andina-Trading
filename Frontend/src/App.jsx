@@ -24,7 +24,6 @@ import ContratosInversionistaPage from "./pages/contratos/ContratosInversionista
 import ContratosComisionistaPage from "./pages/comisionista/ContratosComisionistaPage";
 
 import CuentaBancariaPage from "./pages/inversionista/CuentaBancariaPage";
-import RecargaPage from "./pages/inversionista/RecargaPage";
 
 import BuscarYCrearOrden from "./pages/inversionista/BuscarYCrearOrden";
 import VenderOrdenPage from "./pages/inversionista/VenderOrdenPage";
@@ -37,6 +36,7 @@ import AuditoriaLogsPage from "./pages/admin/AuditoriaLogsPage";
 import RespaldoPage from "./pages/admin/RespaldoPage";
 import ReportesPage from "./pages/admin/ReportesPage";
 import ConsolidacionPage from "./pages/admin/ConsolidacionPage";
+import RecargaModal from "./pages/inversionista/RecargaModal";
 
 export default function App() {
   return (
@@ -81,7 +81,7 @@ export default function App() {
             path="/recargar"
             element={
               <InvestorRoute>
-                <RecargaPage />
+                <RecargaModal />
               </InvestorRoute>
             }
           />

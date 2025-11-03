@@ -116,181 +116,128 @@ export default function PaisesPage() {
   };
 
   return (
-    <div className="container" style={{ maxWidth: 720, margin: "0 auto" }}>
-      <h2 style={{ margin: "16px 0" }}>Países</h2>
+    <div className="min-h-[100dvh] bg-slate-950 text-slate-100">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          Países
+        </h2>
+        <div className="mt-2 h-0.5 w-20 bg-emerald-400/80 rounded mb-4"></div>
 
-      <div
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: 8,
-          padding: 16,
-          marginBottom: 24,
-        }}
-      >
-        <h4 style={{ marginTop: 0 }}>Crear país</h4>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 ring-1 ring-white/5 backdrop-blur p-5 space-y-4">
+          <h4 className="text-lg font-semibold text-slate-100">Crear país</h4>
 
-        {error && (
-          <div
-            style={{
-              background: "#fde2e2",
-              border: "1px solid #f5c2c7",
-              color: "#842029",
-              padding: "10px 12px",
-              borderRadius: 6,
-              marginBottom: 12,
-            }}
-          >
-            <strong>Error:</strong> {error}
-          </div>
-        )}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-200 px-3 py-2 rounded-lg text-sm">
+              <span className="font-semibold">Error:</span> {error}
+            </div>
+          )}
 
-        {okMsg && (
-          <div
-            style={{
-              background: "#e2f7e8",
-              border: "1px solid #b6e3c1",
-              color: "#0f5132",
-              padding: "10px 12px",
-              borderRadius: 6,
-              marginBottom: 12,
-            }}
-          >
-            {okMsg}
-          </div>
-        )}
+          {okMsg && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 px-3 py-2 rounded-lg text-sm">
+              {okMsg}
+            </div>
+          )}
 
-        <form onSubmit={onSubmit}>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", marginBottom: 6 }}>Nombre</label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Ecuador"
-              className="input"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: 6,
-                border: "1px solid #bbb",
-              }}
-              required
-            />
-          </div>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Ecuador"
+                  className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                  required
+                />
+              </div>
 
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", marginBottom: 6 }}>
-              Código ISO3
-            </label>
-            <input
-              type="text"
-              value={codigoIso3}
-              onChange={(e) => setCodigoIso3(e.target.value.toUpperCase())}
-              placeholder="ECU"
-              maxLength={3}
-              className="input"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: 6,
-                border: "1px solid #bbb",
-                textTransform: "uppercase",
-              }}
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Código ISO3
+                </label>
+                <input
+                  type="text"
+                  value={codigoIso3}
+                  onChange={(e) => setCodigoIso3(e.target.value.toUpperCase())}
+                  placeholder="ECU"
+                  maxLength={3}
+                  className="w-full uppercase tracking-wider bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                  required
+                />
+              </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 6 }}>
-              Situación Económica <span style={{ color: "#d00" }}>*</span>
-            </label>
-            <select
-              value={situacionId}
-              onChange={(e) => setSituacionId(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: 6,
-                border: "1px solid #bbb",
-                background: "white",
-              }}
+              <div className="md:col-span-3">
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Situación Económica
+                </label>
+                <select
+                  value={situacionId}
+                  onChange={(e) => setSituacionId(e.target.value)}
+                  required
+                  className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                >
+                  <option value="">— Seleccionar —</option>
+                  {situaciones.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nombre}
+                    </option>
+                  ))}
+                </select>
+                {situacionId && (
+                  <small className="block mt-2 text-slate-400">
+                    {
+                      situaciones.find(
+                        (x) => String(x.id) === String(situacionId)
+                      )?.descripcion
+                    }
+                  </small>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={creating}
+              className="inline-flex items-center justify-center rounded-lg px-5 py-2.5 bg-emerald-500/90 hover:bg-emerald-500 text-white font-medium shadow-sm disabled:opacity-60 transition"
             >
-              <option value="">— Seleccionar —</option>
-              {situaciones.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre}
-                </option>
-              ))}
-            </select>
-            {situacionId && (
-              <small style={{ display: "block", marginTop: 6, color: "#555" }}>
-                {
-                  situaciones.find((x) => String(x.id) === String(situacionId))
-                    ?.descripcion
-                }
-              </small>
-            )}
-          </div>
+              {creating ? "Creando..." : "Crear"}
+            </button>
+          </form>
+        </div>
 
-          <button
-            type="submit"
-            disabled={creating}
-            style={{
-              background: creating ? "#6ea8fe" : "#0d6efd",
-              color: "white",
-              border: "none",
-              padding: "10px 16px",
-              borderRadius: 8,
-              cursor: creating ? "not-allowed" : "pointer",
-            }}
-          >
-            {creating ? "Creando..." : "Crear"}
-          </button>
-        </form>
-      </div>
+        <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 ring-1 ring-white/5 backdrop-blur p-5">
+          <h4 className="text-lg font-semibold text-slate-100 mb-3">Listado</h4>
 
-      <div
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: 8,
-          padding: 16,
-          marginBottom: 24,
-        }}
-      >
-        <h4 style={{ marginTop: 0 }}>Listado</h4>
-
-        {loadingList ? (
-          <p>Cargando países...</p>
-        ) : paises.length === 0 ? (
-          <p>No hay países registrados.</p>
-        ) : (
-          <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
-            {paises.map((p) => (
-              <li
-                key={p.id ?? `${p.nombre}-${p.codigoIso3}`}
-                style={{
-                  border: "1px solid #eee",
-                  padding: "10px 12px",
-                  borderRadius: 6,
-                  marginBottom: 8,
-                }}
-              >
-                <strong>{p.nombre}</strong> · {p.codigoIso3?.toUpperCase()}
-                {p.situacionEconomicaDTO?.nombre && (
-                  <div style={{ color: "#555", marginTop: 4 }}>
-                    <small>
+          {loadingList ? (
+            <p className="text-slate-400">Cargando países...</p>
+          ) : paises.length === 0 ? (
+            <p className="text-slate-400">No hay países registrados.</p>
+          ) : (
+            <ul className="space-y-2">
+              {paises.map((p) => (
+                <li
+                  key={p.id ?? `${p.nombre}-${p.codigoIso3}`}
+                  className="rounded-xl ring-1 ring-slate-800 bg-slate-950/60 p-3 hover:bg-slate-900/40 transition"
+                >
+                  <div className="font-medium text-slate-100">
+                    {p.nombre} · {p.codigoIso3?.toUpperCase()}
+                  </div>
+                  {p.situacionEconomicaDTO?.nombre && (
+                    <div className="text-sm text-slate-400 mt-1">
                       Situación: {p.situacionEconomicaDTO.nombre}
                       {p.situacionEconomicaDTO.descripcion
                         ? ` — ${p.situacionEconomicaDTO.descripcion}`
                         : ""}
-                    </small>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

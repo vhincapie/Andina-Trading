@@ -152,7 +152,7 @@ export default function ComisionistasPage() {
         numeroDocumento: form.numeroDocumento.trim(),
         correo: form.correo.trim().toLowerCase(),
         contrasena: form.contrasena,
-        fechaNacimiento: form.fechaNacimiento, 
+        fechaNacimiento: form.fechaNacimiento,
         paisId: Number(form.paisId),
         ciudadId: Number(form.ciudadId),
         aniosExperiencia: Number(form.aniosExperiencia),
@@ -188,231 +188,234 @@ export default function ComisionistasPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Comisionistas</h2>
+    <div className="min-h-[100dvh] bg-slate-950 text-slate-100">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          Comisionistas
+        </h2>
+        <div className="mt-2 h-0.5 w-20 bg-emerald-400/80 rounded mb-4"></div>
 
-      <form
-        onSubmit={onSubmit}
-        className="bg-white border rounded p-4 space-y-3"
-      >
-        <h3 className="font-semibold">Registrar comisionista</h3>
-        <ErrorAlert message={error} onClose={() => setError("")} />
-        <SuccessAlert message={ok} onClose={() => setOk("")} />
-
-        <div className="grid gap-3 md:grid-cols-3">
-          <div>
-            <label htmlFor="nombre" className="block text-sm mb-1">
-              Nombre
-            </label>
-            <input
-              id="nombre"
-              className="border p-2 rounded w-full"
-              name="nombre"
-              placeholder="Nombre"
-              value={form.nombre}
-              onChange={onChange}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="apellido" className="block text-sm mb-1">
-              Apellido
-            </label>
-            <input
-              id="apellido"
-              className="border p-2 rounded w-full"
-              name="apellido"
-              placeholder="Apellido"
-              value={form.apellido}
-              onChange={onChange}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="fechaNacimiento" className="block text-sm mb-1">
-              Fecha de nacimiento
-            </label>
-            <input
-              id="fechaNacimiento"
-              type="date"
-              className="border p-2 rounded w-full"
-              name="fechaNacimiento"
-              value={form.fechaNacimiento}
-              onChange={onChange}
-              min={minBirthDate}
-              max={maxBirthDate}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="tipoDocumento" className="block text-sm mb-1">
-              Tipo de documento
-            </label>
-            <select
-              id="tipoDocumento"
-              className="border p-2 rounded w-full"
-              name="tipoDocumento"
-              value={form.tipoDocumento}
-              onChange={onChange}
-              required
-            >
-              <option value="">Selecciona…</option>
-              <option value="CC">Cédula de Ciudadanía</option>
-              <option value="CE">Cédula de Extranjería</option>
-              <option value="PAS">Pasaporte</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="numeroDocumento" className="block text-sm mb-1">
-              Número de documento
-            </label>
-            <input
-              id="numeroDocumento"
-              className="border p-2 rounded w-full"
-              name="numeroDocumento"
-              placeholder="Número"
-              value={form.numeroDocumento}
-              onChange={onChange}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="correo" className="block text-sm mb-1">
-              Correo
-            </label>
-            <input
-              id="correo"
-              type="email"
-              className="border p-2 rounded w-full"
-              name="correo"
-              placeholder="correo@dominio.com"
-              value={form.correo}
-              onChange={onChange}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="contrasena" className="block text-sm mb-1">
-              Contraseña
-            </label>
-            <input
-              id="contrasena"
-              type="password"
-              className="border p-2 rounded w-full"
-              name="contrasena"
-              placeholder="Mínimo 8 caracteres"
-              value={form.contrasena}
-              onChange={onChange}
-              required
-              minLength={8}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="aniosExperiencia" className="block text-sm mb-1">
-              Años de experiencia
-            </label>
-            <input
-              id="aniosExperiencia"
-              className="border p-2 rounded w-full"
-              name="aniosExperiencia"
-              placeholder="0"
-              value={form.aniosExperiencia}
-              onChange={onChange}
-              inputMode="numeric"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="paisId" className="block text-sm mb-1">
-              País
-            </label>
-            <select
-              id="paisId"
-              className="border p-2 rounded w-full"
-              name="paisId"
-              value={form.paisId}
-              onChange={onChange}
-              required
-            >
-              <option value="">Selecciona un país…</option>
-              {paises.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="ciudadId" className="block text-sm mb-1">
-              Ciudad
-            </label>
-            <select
-              id="ciudadId"
-              className="border p-2 rounded w-full"
-              name="ciudadId"
-              value={form.ciudadId}
-              onChange={onChange}
-              required
-              disabled={!form.paisId}
-            >
-              <option value="">
-                {form.paisId
-                  ? "Selecciona una ciudad…"
-                  : "Selecciona primero el país"}
-              </option>
-              {ciudadesFiltradas.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={creating}
-          className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-60"
+        <form
+          onSubmit={onSubmit}
+          className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-xl ring-1 ring-white/5 backdrop-blur space-y-4"
         >
-          {creating ? "Registrando..." : "Registrar"}
-        </button>
-      </form>
+          <h3 className="text-lg font-semibold text-slate-100">
+            Registrar comisionista
+          </h3>
+          <ErrorAlert message={error} onClose={() => setError("")} />
+          <SuccessAlert message={ok} onClose={() => setOk("")} />
 
-      <div className="bg-white border rounded p-4">
-        <h3 className="font-semibold mb-2">Listado de comisionistas</h3>
-        {loading ? (
-          <p className="text-gray-600">Cargando...</p>
-        ) : list.length === 0 ? (
-          <p className="text-gray-600">No hay comisionistas registrados.</p>
-        ) : (
-          <ul className="space-y-2">
-            {list.map((c) => {
-              const paisNombre = paisNombreById[String(c.paisId)] ?? "—";
-              const ciudadNombre = ciudadNombreById[String(c.ciudadId)] ?? "—";
-              return (
-                <li key={c.id} className="border rounded p-2">
-                  <div className="font-medium">
-                    {c.nombre} {c.apellido} · {c.correo}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Doc: {c.tipoDocumento} {c.numeroDocumento} · Nacimiento:{" "}
-                    {c.fechaNacimiento || "—"} · País: {paisNombre} · Ciudad:{" "}
-                    {ciudadNombre} · Experiencia: {c.aniosExperiencia} año(s)
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+          <div className="grid gap-4 md:gap-6 md:grid-cols-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Nombre
+              </label>
+              <input
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="nombre"
+                placeholder="Nombre"
+                value={form.nombre}
+                onChange={onChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Apellido
+              </label>
+              <input
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="apellido"
+                placeholder="Apellido"
+                value={form.apellido}
+                onChange={onChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Fecha de nacimiento
+              </label>
+              <input
+                type="date"
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="fechaNacimiento"
+                value={form.fechaNacimiento}
+                onChange={onChange}
+                min={minBirthDate}
+                max={maxBirthDate}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Tipo de documento
+              </label>
+              <select
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="tipoDocumento"
+                value={form.tipoDocumento}
+                onChange={onChange}
+                required
+              >
+                <option value="">Selecciona…</option>
+                <option value="CC">Cédula de Ciudadanía</option>
+                <option value="CE">Cédula de Extranjería</option>
+                <option value="PAS">Pasaporte</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Número de documento
+              </label>
+              <input
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="numeroDocumento"
+                placeholder="Número"
+                value={form.numeroDocumento}
+                onChange={onChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Correo
+              </label>
+              <input
+                type="email"
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="correo"
+                placeholder="correo@dominio.com"
+                value={form.correo}
+                onChange={onChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="contrasena"
+                placeholder="Mínimo 8 caracteres"
+                value={form.contrasena}
+                onChange={onChange}
+                required
+                minLength={8}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Años de experiencia
+              </label>
+              <input
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="aniosExperiencia"
+                placeholder="0"
+                value={form.aniosExperiencia}
+                onChange={onChange}
+                inputMode="numeric"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                País
+              </label>
+              <select
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                name="paisId"
+                value={form.paisId}
+                onChange={onChange}
+                required
+              >
+                <option value="">Selecciona un país…</option>
+                {paises.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Ciudad
+              </label>
+              <select
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition disabled:opacity-60"
+                name="ciudadId"
+                value={form.ciudadId}
+                onChange={onChange}
+                required
+                disabled={!form.paisId}
+              >
+                <option value="">
+                  {form.paisId
+                    ? "Selecciona una ciudad…"
+                    : "Selecciona primero el país"}
+                </option>
+                {ciudadesFiltradas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={creating}
+            className="bg-emerald-500/90 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm disabled:opacity-60 transition"
+          >
+            {creating ? "Registrando..." : "Registrar"}
+          </button>
+        </form>
+
+        <div className="mt-6 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-xl ring-1 ring-white/5 backdrop-blur">
+          <h3 className="text-lg font-semibold text-slate-100 mb-3">
+            Listado de comisionistas
+          </h3>
+          {loading ? (
+            <p className="text-slate-400">Cargando...</p>
+          ) : list.length === 0 ? (
+            <p className="text-slate-400">No hay comisionistas registrados.</p>
+          ) : (
+            <ul className="space-y-2">
+              {list.map((c) => {
+                const paisNombre = paisNombreById[String(c.paisId)] ?? "—";
+                const ciudadNombre =
+                  ciudadNombreById[String(c.ciudadId)] ?? "—";
+                return (
+                  <li
+                    key={c.id}
+                    className="rounded-xl ring-1 ring-slate-800 bg-slate-950/60 p-3 hover:bg-slate-900/40 transition"
+                  >
+                    <div className="font-medium text-slate-100">
+                      {c.nombre} {c.apellido} · {c.correo}
+                    </div>
+                    <div className="text-sm text-slate-400">
+                      Doc: {c.tipoDocumento} {c.numeroDocumento} · Nacimiento:{" "}
+                      {c.fechaNacimiento || "—"} · País: {paisNombre} · Ciudad:{" "}
+                      {ciudadNombre} · Experiencia: {c.aniosExperiencia} año(s)
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

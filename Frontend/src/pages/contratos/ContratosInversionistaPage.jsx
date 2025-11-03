@@ -104,7 +104,9 @@ Al marcar “Acepto los términos” y registrar la orden en la plataforma, el I
         aceptaTerminos: true,
       };
       await registrarContrato(payload);
-      await reloadContrato(); 
+      await reloadContrato();
+
+      window.dispatchEvent(new Event("contract:changed"));
       setOk("Contrato registrado con éxito.");
       setSelectedComisionistaId("");
       setObservaciones("");
@@ -125,11 +127,11 @@ Al marcar “Acepto los términos” y registrar la orden en la plataforma, el I
     setContratoSaving(true);
     try {
       await cancelarMiContratoActivo();
-      await reloadContrato(); 
+      await reloadContrato();
+
+      window.dispatchEvent(new Event("contract:changed"));
       setOk("Contrato cancelado.");
-      if (contrato && contrato.estado !== "ACTIVO") {
-        setContrato(null);
-      }
+      setContrato(null);
     } catch (e) {
       setError(
         e?.response?.data?.message || "No fue posible cancelar el contrato."
@@ -139,17 +141,31 @@ Al marcar “Acepto los términos” y registrar la orden en la plataforma, el I
     }
   };
 
+  const shell = "min-h-[100dvh] bg-slate-950 text-slate-100";
+  const wrap = "max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8";
+  const panel =
+    "bg-slate-900/50 border border-slate-800 rounded-2xl shadow-xl ring-1 ring-white/5 backdrop-blur p-6 md:p-7";
+  const label = "text-xs uppercase tracking-wide text-slate-400";
+  const input =
+    "w-full bg-slate-900/60 border border-slate-700/70 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-400/40";
+  const btnPrimary =
+    "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg transition-colors disabled:opacity-60";
+  const btnGhost =
+    "px-4 py-2.5 rounded-lg border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-100";
+  const btnDanger =
+    "bg-red-600 hover:bg-red-500 text-white px-4 py-2.5 rounded-lg transition-colors disabled:opacity-60";
+
   const renderFormRegistro = () => (
-    <div className="bg-white border rounded p-4 space-y-3">
-      <p className="text-gray-700">
+    <div className={panel}>
+      <p className="text-slate-300 mb-4">
         No tienes contrato activo. Selecciona un comisionista para registrarlo.
       </p>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         <div>
-          <label className="block text-sm mb-1">Comisionista</label>
+          <label className={label}>Comisionista</label>
           <select
-            className="border p-2 rounded w-full"
+            className={input}
             value={selectedComisionistaId}
             onChange={(e) => setSelectedComisionistaId(e.target.value)}
           >
@@ -164,9 +180,9 @@ Al marcar “Acepto los términos” y registrar la orden en la plataforma, el I
         </div>
 
         <div>
-          <label className="block text-sm mb-1">Moneda</label>
+          <label className={label}>Moneda</label>
           <select
-            className="border p-2 rounded w-full"
+            className={input}
             value={moneda}
             onChange={(e) => setMoneda(e.target.value)}
           >
@@ -178,10 +194,10 @@ Al marcar “Acepto los términos” y registrar la orden en la plataforma, el I
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm mb-1">Observaciones (opcional)</label>
+      <div className="mt-5">
+        <label className={label}>Observaciones (opcional)</label>
         <textarea
-          className="border p-2 rounded w-full"
+          className={input}
           value={observaciones}
           onChange={(e) => setObservaciones(e.target.value)}
           rows={3}
@@ -189,15 +205,15 @@ Al marcar “Acepto los términos” y registrar la orden en la plataforma, el I
         />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-5">
         <button
           type="button"
-          className="px-3 py-2 border rounded"
+          className={btnGhost}
           onClick={() => setShowTerms(true)}
         >
           Ver términos
         </button>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
             checked={acceptedTerms}
@@ -207,94 +223,117 @@ Al marcar “Acepto los términos” y registrar la orden en la plataforma, el I
         </label>
       </div>
 
-      <button
-        onClick={onRegistrarContrato}
-        disabled={!selectedComisionistaId || !acceptedTerms || contratoSaving}
-        className="bg-green-600 text-white px-3 py-2 rounded disabled:opacity-60"
-      >
-        {contratoSaving ? "Registrando..." : "Registrar contrato"}
-      </button>
+      <div className="mt-6">
+        <button
+          onClick={onRegistrarContrato}
+          disabled={!selectedComisionistaId || !acceptedTerms || contratoSaving}
+          className={btnPrimary}
+        >
+          {contratoSaving ? "Registrando..." : "Registrar contrato"}
+        </button>
+      </div>
     </div>
   );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-3">
-      <h2 className="text-2xl font-semibold">Contrato</h2>
+    <div className={shell}>
+      <div className={wrap}>
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          Contrato
+        </h2>
+        <div className="mt-2 h-0.5 w-20 bg-emerald-400/80 rounded mb-4"></div>
 
-      <ErrorAlert message={error} onClose={() => setError("")} />
-      <SuccessAlert message={ok} onClose={() => setOk("")} />
-
-      {contratoLoading ? (
-        <p>Cargando contrato...</p>
-      ) : contrato && contrato.estado === "ACTIVO" ? (
-        <div className="bg-white border rounded p-4 space-y-1">
-          <p>
-            <b>Comisionista:</b> {contrato.comisionistaNombreCompleto || "—"}
-          </p>
-          <p>
-            <b>Inversionista:</b> {contrato.inversionistaNombreCompleto || "—"}{" "}
-            {contrato.inversionistaDocumento
-              ? `(${contrato.inversionistaDocumento})`
-              : ""}
-          </p>
-          <p>
-            <b>Estado:</b> {contrato.estado}
-          </p>
-          <p>
-            <b>Moneda:</b> {contrato.moneda}
-          </p>
-          <p>
-            <b>Porcentaje cobro:</b> {contrato.porcentajeCobroAplicado}%
-          </p>
-          <p>
-            <b>Fecha inicio:</b> {contrato.fechaInicio || "—"}
-          </p>
-          {!!contrato.fechaFin && (
-            <p>
-              <b>Fecha fin:</b> {contrato.fechaFin}
-            </p>
-          )}
-
-          <button
-            onClick={onCancelarContrato}
-            disabled={contratoSaving}
-            className="bg-red-600 text-white px-3 py-2 rounded disabled:opacity-60"
-          >
-            {contratoSaving ? "Cancelando..." : "Cancelar contrato"}
-          </button>
+        <div className="max-w-5xl">
+          <ErrorAlert message={error} onClose={() => setError("")} />
+          <SuccessAlert message={ok} onClose={() => setOk("")} />
         </div>
-      ) : (
-        renderFormRegistro()
-      )}
 
-      <Modal
-        open={showTerms}
-        title="Términos y Condiciones del Contrato"
-        onClose={() => setShowTerms(false)}
-        footer={
-          <div className="flex justify-end gap-2">
-            <button
-              className="px-3 py-2 border rounded"
-              onClick={() => setShowTerms(false)}
-            >
-              Cerrar
-            </button>
-            <button
-              className="px-3 py-2 bg-green-600 text-white rounded"
-              onClick={() => {
-                setAcceptedTerms(true);
-                setShowTerms(false);
-              }}
-            >
-              Aceptar
-            </button>
+        {contratoLoading ? (
+          <p className="text-slate-300 mt-4">Cargando contrato...</p>
+        ) : contrato && contrato.estado === "ACTIVO" ? (
+          <div className={`${panel} space-y-5`}>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  label: "Comisionista:",
+                  value: contrato.comisionistaNombreCompleto || "—",
+                },
+                {
+                  label: "Inversionista:",
+                  value:
+                    (contrato.inversionistaNombreCompleto || "—") +
+                    (contrato.inversionistaDocumento
+                      ? ` (${contrato.inversionistaDocumento})`
+                      : ""),
+                },
+                { label: "Estado:", value: contrato.estado },
+                { label: "Moneda:", value: contrato.moneda },
+                {
+                  label: "Porcentaje cobro:",
+                  value: `${contrato.porcentajeCobroAplicado}%`,
+                },
+                {
+                  label: "Fecha inicio:",
+                  value: contrato.fechaInicio || "—",
+                },
+                ...(contrato.fechaFin
+                  ? [{ label: "Fecha fin:", value: contrato.fechaFin }]
+                  : []),
+              ].map((it, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 ring-1 ring-white/5"
+                >
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                    {it.label}
+                  </div>
+                  <div className="mt-1.5 text-slate-100 font-medium truncate">
+                    {it.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={onCancelarContrato}
+                disabled={contratoSaving}
+                className={btnDanger}
+              >
+                {contratoSaving ? "Cancelando..." : "Cancelar contrato"}
+              </button>
+            </div>
           </div>
-        }
-      >
-        <pre className="whitespace-pre-wrap text-sm leading-6">
-          {buildTerminos()}
-        </pre>
-      </Modal>
+        ) : (
+          renderFormRegistro()
+        )}
+
+        <Modal
+          open={showTerms}
+          title="Términos y Condiciones del Contrato"
+          onClose={() => setShowTerms(false)}
+          footer={
+            <div className="flex justify-end gap-2">
+              <button className={btnGhost} onClick={() => setShowTerms(false)}>
+                Cerrar
+              </button>
+              <button
+                className={btnPrimary}
+                onClick={() => {
+                  setAcceptedTerms(true);
+                  setShowTerms(false);
+                }}
+              >
+                Aceptar
+              </button>
+            </div>
+          }
+        >
+          <pre className="whitespace-pre-wrap text-sm leading-6 text-slate-200">
+            {buildTerminos()}
+          </pre>
+        </Modal>
+      </div>
     </div>
   );
 }

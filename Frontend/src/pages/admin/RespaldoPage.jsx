@@ -175,152 +175,174 @@ export default function RespaldoPage() {
   }, [archivos, sel]);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-semibold">Respaldo</h2>
+    <div className="min-h-[100dvh] bg-slate-950 text-slate-100">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          Respaldo
+        </h2>
+        <div className="mt-2 h-0.5 w-20 bg-emerald-400/80 rounded mb-4"></div>
 
-      <ErrorAlert message={err} onClose={() => setErr("")} />
-      <SuccessAlert message={ok} onClose={() => setOk("")} />
+        <div className="mb-4 space-y-2">
+          <ErrorAlert message={err} onClose={() => setErr("")} />
+          <SuccessAlert message={ok} onClose={() => setOk("")} />
+        </div>
 
-      <div className="bg-white border rounded p-4 space-y-3">
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="md:col-span-2">
-            <span className="block text-sm mb-1">Alcance</span>
-            <div className="flex items-center gap-4">
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="scope"
-                  value="ALL"
-                  checked={scope === "ALL"}
-                  onChange={(e) => setScope(e.target.value)}
-                />
-                <span>Todas las bases</span>
-              </label>
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="scope"
-                  value="ONE"
-                  checked={scope === "ONE"}
-                  onChange={(e) => setScope(e.target.value)}
-                />
-                <span>Una específica</span>
-              </label>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <section className="lg:col-span-3 bg-slate-900/50 border border-slate-800 rounded-2xl p-5 shadow-xl ring-1 ring-white/5 backdrop-blur">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="md:col-span-2">
+                <span className="block text-xs font-medium text-slate-300 mb-2">
+                  Alcance
+                </span>
+                <div className="flex items-center gap-6 text-sm">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="scope"
+                      value="ALL"
+                      checked={scope === "ALL"}
+                      onChange={(e) => setScope(e.target.value)}
+                    />
+                    <span className="text-slate-200">Todas las bases</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="scope"
+                      value="ONE"
+                      checked={scope === "ONE"}
+                      onChange={(e) => setScope(e.target.value)}
+                    />
+                    <span className="text-slate-200">Una específica</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="block text-xs font-medium text-slate-300 mb-2">
+                  Base de datos
+                </label>
+                <select
+                  className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition disabled:opacity-60"
+                  value={dbFull}
+                  onChange={(e) => setDbFull(e.target.value)}
+                  disabled={scope !== "ONE"}
+                >
+                  <option value="">
+                    {scope === "ONE" ? "Selecciona…" : "No aplica"}
+                  </option>
+                  {dbItems.map((d) => (
+                    <option key={d.full} value={d.full}>
+                      {d.short}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-3 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={onRun}
+                  disabled={loading || (scope === "ONE" && !dbFull)}
+                  className="inline-flex items-center justify-center rounded-lg px-5 py-2.5 bg-emerald-500/90 hover:bg-emerald-500 text-white font-medium shadow-sm disabled:opacity-60 transition"
+                >
+                  Ejecutar
+                </button>
+                <button
+                  onClick={load}
+                  disabled={loading}
+                  className="inline-flex items-center justify-center rounded-lg px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium ring-1 ring-slate-700 disabled:opacity-60 transition"
+                >
+                  Recargar lista
+                </button>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div className="md:col-span-1">
-            <label className="block text-sm mb-1">Base de datos</label>
-            <select
-              className="border rounded p-2 w-full"
-              value={dbFull}
-              onChange={(e) => setDbFull(e.target.value)}
-              disabled={scope !== "ONE"}
-            >
-              <option value="">
-                {scope === "ONE" ? "Selecciona…" : "No aplica"}
-              </option>
-              {dbItems.map((d) => (
-                <option key={d.full} value={d.full}>
-                  {d.short}
-                </option>
-              ))}
-            </select>
-          </div>
+          <section className="lg:col-span-3 bg-slate-900/50 border border-slate-800 rounded-2xl shadow-xl ring-1 ring-white/5 backdrop-blur overflow-hidden">
+            <div className="p-5 grid gap-4 md:grid-cols-3 items-end">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-slate-300 mb-2">
+                  Nombre ZIP
+                </label>
+                <input
+                  className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                  value={zipName}
+                  onChange={(e) => setZipName(e.target.value)}
+                  placeholder="respaldo-YYYYMMDD-HHmmss"
+                />
+              </div>
+              <div className="md:col-span-1">
+                <button
+                  onClick={onZip}
+                  disabled={loading}
+                  className="w-full inline-flex items-center justify-center rounded-lg px-5 py-2.5 bg-cyan-500/90 hover:bg-cyan-500 text-white font-medium shadow-sm disabled:opacity-60 transition"
+                >
+                  Crear ZIP
+                </button>
+              </div>
+            </div>
 
-          <div className="md:col-span-3 flex items-end gap-2">
-            <button
-              onClick={onRun}
-              disabled={loading || (scope === "ONE" && !dbFull)}
-              className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-60"
-            >
-              Ejecutar
-            </button>
-            <button
-              onClick={load}
-              disabled={loading}
-              className="bg-gray-200 text-gray-800 px-3 py-2 rounded disabled:opacity-60"
-            >
-              Recargar lista
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border rounded">
-        <div className="p-3 flex gap-2 items-end">
-          <div className="flex-1">
-            <label className="block text-sm mb-1">Nombre ZIP</label>
-            <input
-              className="border rounded p-2 w-full"
-              value={zipName}
-              onChange={(e) => setZipName(e.target.value)}
-              placeholder="respaldo-YYYYMMDD-HHmmss"
-            />
-          </div>
-          <button
-            onClick={onZip}
-            disabled={loading}
-            className="bg-emerald-600 text-white px-3 py-2 rounded disabled:opacity-60"
-          >
-            Crear ZIP
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={allChecked}
-                    onChange={(e) => toggleAll(e.target.checked)}
-                  />
-                </th>
-                <th className="text-left px-3 py-2">Archivo</th>
-                <th className="text-left px-3 py-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td className="px-3 py-3 text-gray-600" colSpan={3}>
-                    Cargando...
-                  </td>
-                </tr>
-              ) : archivos.length === 0 ? (
-                <tr>
-                  <td className="px-3 py-3 text-gray-600" colSpan={3}>
-                    Sin archivos.
-                  </td>
-                </tr>
-              ) : (
-                archivos.map((f) => (
-                  <tr key={f} className="border-t">
-                    <td className="px-3 py-2">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-900/70 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-4 py-3">
                       <input
                         type="checkbox"
-                        checked={!!sel[f]}
-                        onChange={(e) =>
-                          setSel((m) => ({ ...m, [f]: e.target.checked }))
-                        }
+                        checked={allChecked}
+                        onChange={(e) => toggleAll(e.target.checked)}
                       />
-                    </td>
-                    <td className="px-3 py-2">{f}</td>
-                    <td className="px-3 py-2">
-                      <button
-                        onClick={() => onDownload(f)}
-                        disabled={loading}
-                        className="px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-800"
-                      >
-                        Descargar
-                      </button>
-                    </td>
+                    </th>
+                    <th className="text-left px-4 py-3 text-slate-300 font-semibold uppercase tracking-wider text-[11px]">
+                      Archivo
+                    </th>
+                    <th className="text-left px-4 py-3 text-slate-300 font-semibold uppercase tracking-wider text-[11px]">
+                      Acciones
+                    </th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-slate-800/70">
+                  {loading ? (
+                    <tr>
+                      <td className="px-4 py-6 text-slate-400" colSpan={3}>
+                        Cargando...
+                      </td>
+                    </tr>
+                  ) : archivos.length === 0 ? (
+                    <tr>
+                      <td className="px-4 py-6 text-slate-400" colSpan={3}>
+                        Sin archivos.
+                      </td>
+                    </tr>
+                  ) : (
+                    archivos.map((f) => (
+                      <tr key={f} className="hover:bg-slate-800/40 transition">
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={!!sel[f]}
+                            onChange={(e) =>
+                              setSel((m) => ({ ...m, [f]: e.target.checked }))
+                            }
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">{f}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => onDownload(f)}
+                            disabled={loading}
+                            className="inline-flex items-center justify-center rounded-lg px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 ring-1 ring-slate-700 disabled:opacity-60 transition"
+                          >
+                            Descargar
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </div>
     </div>

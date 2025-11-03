@@ -42,7 +42,6 @@ export default function ComisionesResumenPage() {
 
   useEffect(() => {
     fetchData({ from, to });
-
   }, []);
 
   const onFiltrar = (e) => {
@@ -54,59 +53,77 @@ export default function ComisionesResumenPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5">
-      <h2 className="text-2xl font-semibold">Resumen de comisiones</h2>
+    <div className="min-h-[100dvh] bg-slate-950 text-slate-100">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 space-y-5">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          Resumen de comisiones
+        </h2>
+        <div className="mt-1 h-0.5 w-24 bg-emerald-400/80 rounded"></div>
 
-      <form
-        onSubmit={onFiltrar}
-        className="bg-white border rounded p-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]"
-      >
-        <div>
-          <label className="block text-sm mb-1">Desde</label>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
+        <form
+          onSubmit={onFiltrar}
+          className="rounded-2xl border border-slate-800 ring-1 ring-white/5 bg-slate-900/50 backdrop-blur grid gap-4 md:grid-cols-[1fr_1fr_auto] p-4 md:p-6"
+        >
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              Desde
+            </label>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm mb-1">Hasta</label>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              Hasta
+            </label>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+            />
+          </div>
 
-        <div className="flex items-end">
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
-            disabled={loading}
-          >
-            {loading ? "Cargando..." : "Filtrar"}
-          </button>
-        </div>
-      </form>
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 bg-emerald-500/90 hover:bg-emerald-500 text-white font-medium shadow-sm disabled:opacity-60 transition"
+              disabled={loading}
+            >
+              {loading ? "Cargando..." : "Filtrar"}
+            </button>
+          </div>
+        </form>
 
-      <ErrorAlert message={err} onClose={() => setErr("")} />
+        <ErrorAlert message={err} onClose={() => setErr("")} />
 
-      <section className="bg-white border rounded p-4">
-        <p className="text-lg">
-          <span className="font-semibold">Total de órdenes:</span>{" "}
-          {cantidad}
-        </p>
-        <p className="text-lg">
-          <span className="font-semibold">Comisión acumulada:</span>{" "}
-          ${total.toFixed(2)}
-        </p>
-        <p className="text-sm text-gray-600">
-          <span className="font-semibold">Período:</span> {periodoLabel}
-        </p>
-      </section>
+        <section className="rounded-2xl border border-slate-800 ring-1 ring-white/5 bg-slate-900/50 backdrop-blur p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-xl ring-1 ring-slate-800 bg-slate-950/60 p-4">
+              <div className="text-xs text-slate-400">Total de órdenes</div>
+              <div className="text-2xl font-semibold text-slate-100">
+                {cantidad}
+              </div>
+            </div>
+            <div className="rounded-xl ring-1 ring-slate-800 bg-slate-950/60 p-4">
+              <div className="text-xs text-slate-400">Comisión acumulada</div>
+              <div className="text-2xl font-semibold text-slate-100">
+                ${total.toFixed(2)}
+              </div>
+            </div>
+            <div className="rounded-xl ring-1 ring-slate-800 bg-slate-950/60 p-4">
+              <div className="text-xs text-slate-400">Período</div>
+              <div className="text-sm font-medium text-slate-200">
+                {periodoLabel}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

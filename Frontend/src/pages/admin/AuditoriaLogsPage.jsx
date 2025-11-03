@@ -208,202 +208,238 @@ export default function AuditoriaLogsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-semibold">Auditoría · Logs</h2>
-      <form
-        onSubmit={onBuscar}
-        className="bg-white border rounded p-3 grid gap-3 md:grid-cols-6"
-      >
-        <div className="md:col-span-1">
-          <label className="block text-sm mb-1">Event Code</label>
-          <input
-            className="border rounded p-2 w-full"
-            value={eventCode}
-            onChange={(e) => setEventCode(e.target.value)}
-            placeholder="AUTH_LOGIN_SUCCESS"
-          />
-        </div>
-        <div className="md:col-span-1">
-          <label className="block text-sm mb-1">User ID</label>
-          <input
-            className="border rounded p-2 w-full"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            placeholder="correo o id"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm mb-1">Desde</label>
-          <input
-            type="datetime-local"
-            className="border rounded p-2 w-full"
-            value={from}
-            max={nowMax}
-            onChange={(e) => {
-              const v = e.target.value;
-              setFrom(v);
-              if (to && new Date(v) > new Date(to)) setTo(v);
-            }}
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm mb-1">Hasta</label>
-          <input
-            type="datetime-local"
-            className="border rounded p-2 w-full"
-            value={to}
-            min={toMin}
-            max={nowMax}
-            onChange={(e) => setTo(e.target.value)}
-          />
-        </div>
-        <div className="md:col-span-6 flex gap-2">
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-60"
-            disabled={loading}
-          >
-            {loading ? "Buscando..." : "Buscar"}
-          </button>
-          <button
-            type="button"
-            className="bg-emerald-600 text-white px-3 py-2 rounded"
-            onClick={onExport}
-            disabled={loading}
-          >
-            Exportar CSV
-          </button>
-          <div className="ml-auto flex items-center gap-2">
-            <label className="text-sm">Tamaño página</label>
-            <select
-              className="border rounded p-2"
-              value={size}
-              onChange={(e) => {
-                setSize(Number(e.target.value));
-                setPage(0);
-              }}
-            >
-              {[10, 20, 50, 100].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
+    <div className="min-h[100dvh] min-h-[100dvh] bg-slate-950 text-slate-100">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          Auditoría · Logs
+        </h2>
+        <div className="mt-2 h-0.5 w-20 bg-emerald-400/80 rounded mb-4"></div>
+
+        <form
+          onSubmit={onBuscar}
+          className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-xl ring-1 ring-white/5 backdrop-blur"
+        >
+          <div className="grid gap-4 md:gap-6 md:grid-cols-6">
+            <div className="md:col-span-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Event Code
+              </label>
+              <input
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                value={eventCode}
+                onChange={(e) => setEventCode(e.target.value)}
+                placeholder="AUTH_LOGIN_SUCCESS"
+              />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                User ID
+              </label>
+              <input
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="correo o id"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Desde
+              </label>
+              <input
+                type="datetime-local"
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                value={from}
+                max={nowMax}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setFrom(v);
+                  if (to && new Date(v) > new Date(to)) setTo(v);
+                }}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Hasta
+              </label>
+              <input
+                type="datetime-local"
+                className="w-full bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-3 text-slate-100 placeholder:text-slate-500 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                value={to}
+                min={toMin}
+                max={nowMax}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-6 flex flex-col md:flex-row gap-3 md:items-end">
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 bg-emerald-500/90 hover:bg-emerald-500 text-white font-medium shadow-sm disabled:opacity-60 transition"
+                  disabled={loading}
+                >
+                  {loading ? "Buscando..." : "Buscar"}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 bg-cyan-500/90 hover:bg-cyan-500 text-white font-medium shadow-sm disabled:opacity-60 transition"
+                  onClick={onExport}
+                  disabled={loading}
+                >
+                  Exportar CSV
+                </button>
+              </div>
+              <div className="md:ml-auto flex items-center gap-3">
+                <label className="text-xs text-slate-300">Tamaño página</label>
+                <select
+                  className="bg-slate-950/60 ring-1 ring-slate-800 rounded-lg p-2.5 text-slate-100 focus:ring-emerald-400/70 focus:bg-slate-900/70 transition"
+                  value={size}
+                  onChange={(e) => {
+                    setSize(Number(e.target.value));
+                    setPage(0);
+                  }}
+                >
+                  {[10, 20, 50, 100].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
+        </form>
+
+        <div className="max-w-5xl">
+          <ErrorAlert message={err} onClose={() => setErr("")} />
+          <SuccessAlert message={ok} onClose={() => setOk("")} />
         </div>
-      </form>
-      <ErrorAlert message={err} onClose={() => setErr("")} />
-      <SuccessAlert message={ok} onClose={() => setOk("")} />
-      <div className="bg-white border rounded">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                {[
-                  { key: "createdAt", label: "Fecha" },
-                  { key: "eventCode", label: "Event Code" },
-                  { key: "userId", label: "User ID" },
-                  { key: "username", label: "Username" },
-                  { key: "ipAddress", label: "IP" },
-                  { key: "resource", label: "Recurso" },
-                  { key: "action", label: "Acción" },
-                  { key: "details", label: "Detalle" },
-                ].map((col) => (
-                  <th
-                    key={col.key}
-                    className="text-left px-3 py-2 cursor-pointer select-none"
-                    onClick={() => toggleSort(col.key)}
-                    title="Ordenar"
-                  >
-                    <div className="inline-flex items-center gap-1">
-                      {col.label}
-                      {sort.key === col.key && (
-                        <span>{sort.dir === "asc" ? "▲" : "▼"}</span>
-                      )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+
+        <div className="mt-4 bg-slate-900/50 border border-slate-800 rounded-2xl shadow-xl ring-1 ring-white/5 backdrop-blur overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-900/70 sticky top-0 z-10">
                 <tr>
-                  <td className="px-3 py-3 text-gray-600" colSpan={8}>
-                    Cargando...
-                  </td>
+                  {[
+                    { key: "createdAt", label: "Fecha" },
+                    { key: "eventCode", label: "Event Code" },
+                    { key: "userId", label: "User ID" },
+                    { key: "username", label: "Username" },
+                    { key: "ipAddress", label: "IP" },
+                    { key: "resource", label: "Recurso" },
+                    { key: "action", label: "Acción" },
+                    { key: "details", label: "Detalle" },
+                  ].map((col) => (
+                    <th
+                      key={col.key}
+                      className="text-left px-4 py-3 text-slate-300 font-semibold uppercase tracking-wider text-[11px] cursor-pointer select-none"
+                      onClick={() => toggleSort(col.key)}
+                      title="Ordenar"
+                    >
+                      <div className="inline-flex items-center gap-2">
+                        <span>{col.label}</span>
+                        {sort.key === col.key && (
+                          <span className="text-slate-400">
+                            {sort.dir === "asc" ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  ))}
                 </tr>
-              ) : sortedRows.length === 0 ? (
-                <tr>
-                  <td className="px-3 py-3 text-gray-600" colSpan={8}>
-                    Sin resultados.
-                  </td>
-                </tr>
-              ) : (
-                sortedRows.map((r, i) => {
-                  const fechaRaw = getFechaRaw(r);
-                  const detalleStr = stringifyDetalle(getDetalleRaw(r));
-                  return (
-                    <tr key={(r.id ?? r._id ?? i) + "-" + (fechaRaw ?? i)}>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        {fmtDate(fechaRaw)}
-                      </td>
-                      <td className="px-3 py-2">
-                        {r.eventCode ?? r.event_code ?? ""}
-                      </td>
-                      <td className="px-3 py-2">
-                        {r.userId ?? r.user_id ?? ""}
-                      </td>
-                      <td className="px-3 py-2">{r.username ?? ""}</td>
-                      <td className="px-3 py-2">{r.ipAddress ?? r.ip ?? ""}</td>
-                      <td className="px-3 py-2">{r.resource ?? ""}</td>
-                      <td className="px-3 py-2">{r.action ?? ""}</td>
-                      <td
-                        className="px-3 py-2 max-w-[420px] truncate"
-                        title={detalleStr}
+              </thead>
+              <tbody className="divide-y divide-slate-800/70">
+                {loading ? (
+                  <tr>
+                    <td className="px-4 py-6 text-slate-400" colSpan={8}>
+                      Cargando...
+                    </td>
+                  </tr>
+                ) : sortedRows.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-6 text-slate-400" colSpan={8}>
+                      Sin resultados.
+                    </td>
+                  </tr>
+                ) : (
+                  sortedRows.map((r, i) => {
+                    const fechaRaw = getFechaRaw(r);
+                    const detalleStr = stringifyDetalle(getDetalleRaw(r));
+                    return (
+                      <tr
+                        key={(r.id ?? r._id ?? i) + "-" + (fechaRaw ?? i)}
+                        className="hover:bg-slate-800/40 transition"
                       >
-                        {detalleStr}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex items-center justify-between p-3 text-sm">
-          <div>
-            Página <strong>{page + 1}</strong> de <strong>{totalPages}</strong>{" "}
-            · <span>{totalElements} registros</span>
+                        <td className="px-4 py-3 whitespace-nowrap font-mono text-slate-200">
+                          {fmtDate(fechaRaw)}
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">
+                          {r.eventCode ?? r.event_code ?? ""}
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">
+                          {r.userId ?? r.user_id ?? ""}
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">
+                          {r.username ?? ""}
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">
+                          {r.ipAddress ?? r.ip ?? ""}
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">
+                          {r.resource ?? ""}
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">
+                          {r.action ?? ""}
+                        </td>
+                        <td
+                          className="px-4 py-3 max-w-[520px] truncate text-slate-300"
+                          title={detalleStr}
+                        >
+                          {detalleStr}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={goFirst}
-              className="px-2 py-1 border rounded disabled:opacity-50"
-              disabled={page <= 0 || loading}
-            >
-              « Primero
-            </button>
-            <button
-              onClick={goPrev}
-              className="px-2 py-1 border rounded disabled:opacity-50"
-              disabled={page <= 0 || loading}
-            >
-              ‹ Anterior
-            </button>
-            <button
-              onClick={goNext}
-              className="px-2 py-1 border rounded disabled:opacity-50"
-              disabled={page >= totalPages - 1 || loading}
-            >
-              Siguiente ›
-            </button>
-            <button
-              onClick={goLast}
-              className="px-2 py-1 border rounded disabled:opacity-50"
-              disabled={page >= totalPages - 1 || loading}
-            >
-              Último »
-            </button>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 text-sm">
+            <div className="text-slate-300">
+              Página <strong className="text-slate-100">{page + 1}</strong> de{" "}
+              <strong className="text-slate-100">{totalPages}</strong> ·{" "}
+              <span className="text-slate-400">{totalElements} registros</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={goFirst}
+                className="px-3 py-1.5 rounded-lg ring-1 ring-slate-800 text-slate-200 hover:bg-slate-800/60 disabled:opacity-50 transition"
+                disabled={page <= 0 || loading}
+              >
+                « Primero
+              </button>
+              <button
+                onClick={goPrev}
+                className="px-3 py-1.5 rounded-lg ring-1 ring-slate-800 text-slate-200 hover:bg-slate-800/60 disabled:opacity-50 transition"
+                disabled={page <= 0 || loading}
+              >
+                ‹ Anterior
+              </button>
+              <button
+                onClick={goNext}
+                className="px-3 py-1.5 rounded-lg ring-1 ring-slate-800 text-slate-200 hover:bg-slate-800/60 disabled:opacity-50 transition"
+                disabled={page >= totalPages - 1 || loading}
+              >
+                Siguiente ›
+              </button>
+              <button
+                onClick={goLast}
+                className="px-3 py-1.5 rounded-lg ring-1 ring-slate-800 text-slate-200 hover:bg-slate-800/60 disabled:opacity-50 transition"
+                disabled={page >= totalPages - 1 || loading}
+              >
+                Último »
+              </button>
+            </div>
           </div>
         </div>
       </div>
