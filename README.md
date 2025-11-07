@@ -47,25 +47,27 @@ El despliegue y la orquestación de todos los servicios se realiza mediante **Do
 ## Arquitectura de microservicios
 
 Estructura del proyecto backend:
-  Backend/
-  │
-  ├── api-gateway
-  ├── servicio-autenticacion
-  ├── servicio-auditoria
-  ├── servicio-catalogos
-  ├── servicio-comisionista
-  ├── servicio-consolidacion
-  ├── servicio-contratos
-  ├── servicio-cuentas
-  ├── servicio-inversionista
-  ├── servicio-notificaciones
-  ├── servicio-ordenes
-  ├── servicio-portafolio
-  ├── servicio-reportes
-  ├── servicio-respaldo
-  ├── servicio-respaldo
-  └── docker-compose.yml
 
+```bash
+Backend/
+│
+├── api-gateway
+├── servicio-autenticacion
+├── servicio-auditoria
+├── servicio-catalogos
+├── servicio-comisionista
+├── servicio-consolidacion
+├── servicio-contratos
+├── servicio-cuentas
+├── servicio-inversionista
+├── servicio-notificaciones
+├── servicio-ordenes
+├── servicio-portafolio
+├── servicio-reportes
+├── servicio-respaldo
+├── backups/
+├── .env
+└── docker-compose.yml
 
 Cada servicio implementa su propio modelo de dominio, capa de persistencia y lógica de negocio, favoreciendo la **independencia, escalabilidad y mantenibilidad** del sistema.
 
