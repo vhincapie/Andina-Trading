@@ -68,6 +68,7 @@ Backend/
 ├── backups/
 ├── .env
 └── docker-compose.yml
+```
 
 Cada servicio implementa su propio modelo de dominio, capa de persistencia y lógica de negocio, favoreciendo la **independencia, escalabilidad y mantenibilidad** del sistema.
 
